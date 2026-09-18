@@ -1,87 +1,284 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>この絵の、その先へ。</title>
-<style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
-#camera{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#222}
-#shade{position:fixed;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.65));pointer-events:none}
-#hint{position:fixed;top:24px;left:50%;transform:translateX(-50%);padding:10px 16px;border:1px solid rgba(255,255,255,.55);border-radius:999px;color:#fff;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);font-size:13px;white-space:nowrap}
-#scan{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(72vw,300px);height:min(72vw,300px);border:1.5px solid rgba(255,255,255,.8);border-radius:24px;pointer-events:none}
-#scan:before,#scan:after{content:"";position:absolute;width:34px;height:34px;border-color:#fff;border-style:solid}
-#scan:before{left:-2px;top:-2px;border-width:3px 0 0 3px;border-radius:20px 0 0 0}
-#scan:after{right:-2px;bottom:-2px;border-width:0 3px 3px 0;border-radius:0 0 20px 0}
-#start{position:fixed;left:50%;bottom:38px;transform:translateX(-50%);border:0;border-radius:999px;padding:15px 26px;background:#fff;color:#111;font-size:16px;font-weight:700;box-shadow:0 8px 30px #0008}
-#story{position:fixed;left:16px;right:16px;bottom:20px;background:rgba(255,255,255,.95);border-radius:22px;padding:20px;display:none;box-shadow:0 15px 50px #0009}
-.kicker{font-size:12px;letter-spacing:.12em;opacity:.55}
-h1{font-size:25px;line-height:1.25;margin:7px 0 10px}
-p{margin:7px 0;line-height:1.65;font-size:14px}
-button.more{margin-top:12px;border:0;background:#111;color:#fff;border-radius:999px;padding:11px 18px}
-#story .visual{height:150px;border-radius:15px;background:
-radial-gradient(circle at 30% 30%,#fff 0 5%,transparent 6%),
-linear-gradient(135deg,#ddd,#888 48%,#eee 49%,#bbb);
-display:flex;align-items:end;padding:14px;color:#111;font-size:12px;font-weight:700}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>AR Artist</title>
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- MindAR -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #start {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #111;
+    }
+
+    #start button {
+      padding: 18px 32px;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      background: white;
+      color: black;
+      cursor: pointer;
+    }
+
+    #message {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 500;
+      color: white;
+      background: rgba(0,0,0,.65);
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    a-scene {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
 </head>
+
 <body>
-<video id="camera" autoplay playsinline muted></video>
-<div id="shade"></div>
-<div id="hint">商品にスマホを向けてください</div>
-<div id="scan"></div>
 
-<button id="start">AR体験をはじめる</button>
+  <div id="start">
+    <button id="startButton">AR体験をはじめる</button>
+  </div>
 
-<section id="story">
-  <div class="visual">制作風景（サンプル）</div>
-  <div class="kicker">THE STORY OF THIS ART</div>
-  <h1>この絵、どこから来たんだろう？</h1>
-  <p><b>この作品を描いたのは、○○さん。</b></p>
-  <p>ここからは、実際にこの絵が生まれた時間へ。ペンの音、紙の感触、描いている手元を見てください。</p>
-  <button class="more" onclick="showSecond()">制作の時間を見る →</button>
-</section>
+  <div id="message">
+    イラストにカメラを向けてください
+  </div>
 
-<script>
-const video=document.querySelector('#camera');
-const start=document.querySelector('#start');
-const story=document.querySelector('#story');
-const hint=document.querySelector('#hint');
-const scan=document.querySelector('#scan');
+  <a-scene
+    id="scene"
+    mindar-image="
+      imageTargetSrc: ./targets.mind;
+      maxTrack: 1;
+      uiScanning: no;
+      uiLoading: no;
+    "
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
 
-start.onclick=async()=>{
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}}});
-    video.srcObject=stream;
-    start.style.display='none';
-    hint.textContent='商品を認識した想定のサンプル';
-    scan.style.borderColor='rgba(255,255,255,.35)';
-    setTimeout(()=>{
-      scan.style.display='none';
-      story.style.display='block';
-    },1400);
-  }catch(e){
-    alert('カメラを使うにはHTTPS環境とカメラ許可が必要です。');
-  }
-};
+    <a-assets>
 
-function showSecond(){
-  story.innerHTML=`
-    <div class="kicker">BEHIND THE ART</div>
-    <h1>描いている、その時間。</h1>
-    <p>ここに5〜15秒ほどの実写動画を入れる。</p>
-    <p>手元、紙、ペンの音、施設の空気。きれいに作りすぎず、「そこにいる感じ」を残す。</p>
-    <button class="more" onclick="showThird()">この作品が商品になるまで →</button>`;
-}
-function showThird(){
-  story.innerHTML=`
-    <div class="kicker">FROM ART TO PRODUCT</div>
-    <h1>そして、この絵が商品になりました。</h1>
-    <p>原画を学生がデザインし、ハンドタオルやチャームへ。</p>
-    <p><b>目の前の商品は、ここから始まりました。</b></p>
-    <button class="more" onclick="location.reload()">もう一つの作品を見る</button>`;
-}
-</script>
+      <video
+        id="artist01"
+        src="./artist01.mp4"
+        preload="auto"
+        loop
+        muted
+        playsinline
+        webkit-playsinline>
+      </video>
+
+      <video
+        id="artist02"
+        src="./artist02.mp4"
+        preload="auto"
+        loop
+        muted
+        playsinline
+        webkit-playsinline>
+      </video>
+
+    </a-assets>
+
+    <!-- カメラ -->
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false">
+    </a-camera>
+
+
+    <!-- ========================= -->
+    <!-- TARGET 01 -->
+    <!-- ========================= -->
+
+    <a-entity
+      id="target01"
+      mindar-image-target="targetIndex: 0">
+
+      <a-video
+        id="videoPlane01"
+        src="#artist01"
+        position="0 0 0"
+        width="1"
+        height="0.5625"
+        rotation="0 0 0"
+        visible="false">
+      </a-video>
+
+    </a-entity>
+
+
+    <!-- ========================= -->
+    <!-- TARGET 02 -->
+    <!-- ========================= -->
+
+    <a-entity
+      id="target02"
+      mindar-image-target="targetIndex: 1">
+
+      <a-video
+        id="videoPlane02"
+        src="#artist02"
+        position="0 0 0"
+        width="1"
+        height="0.5625"
+        rotation="0 0 0"
+        visible="false">
+      </a-video>
+
+    </a-entity>
+
+  </a-scene>
+
+
+  <script>
+
+    const startScreen = document.getElementById("start");
+    const startButton = document.getElementById("startButton");
+    const message = document.getElementById("message");
+
+    const target01 = document.getElementById("target01");
+    const target02 = document.getElementById("target02");
+
+    const video01 = document.getElementById("artist01");
+    const video02 = document.getElementById("artist02");
+
+    const plane01 = document.getElementById("videoPlane01");
+    const plane02 = document.getElementById("videoPlane02");
+
+    const sceneEl = document.getElementById("scene");
+
+
+    /*
+     * AR開始
+     */
+
+    startButton.addEventListener("click", async () => {
+
+      startScreen.style.display = "none";
+      message.style.display = "block";
+
+      try {
+        await video01.play();
+        video01.pause();
+
+        await video02.play();
+        video02.pause();
+
+      } catch (e) {
+        console.log("Video preload:", e);
+      }
+
+      const arSystem = sceneEl.systems["mindar-image-system"];
+
+      if (arSystem) {
+        arSystem.start();
+      }
+
+    });
+
+
+    /*
+     * TARGET 01
+     */
+
+    target01.addEventListener("targetFound", () => {
+
+      console.log("TARGET 01 FOUND");
+
+      message.style.display = "none";
+
+      plane01.setAttribute("visible", true);
+
+      video02.pause();
+      plane02.setAttribute("visible", false);
+
+      video01.currentTime = 0;
+
+      video01.play().catch(err => {
+        console.log("video01 play:", err);
+      });
+
+    });
+
+
+    target01.addEventListener("targetLost", () => {
+
+      console.log("TARGET 01 LOST");
+
+      plane01.setAttribute("visible", false);
+
+      video01.pause();
+
+    });
+
+
+    /*
+     * TARGET 02
+     */
+
+    target02.addEventListener("targetFound", () => {
+
+      console.log("TARGET 02 FOUND");
+
+      message.style.display = "none";
+
+      plane02.setAttribute("visible", true);
+
+      video01.pause();
+      plane01.setAttribute("visible", false);
+
+      video02.currentTime = 0;
+
+      video02.play().catch(err => {
+        console.log("video02 play:", err);
+      });
+
+    });
+
+
+    target02.addEventListener("targetLost", () => {
+
+      console.log("TARGET 02 LOST");
+
+      plane02.setAttribute("visible", false);
+
+      video02.pause();
+
+    });
+
+  </script>
+
 </body>
 </html>
