@@ -55,6 +55,10 @@
         cursor: pointer;
       }
 
+      #start button:disabled {
+        opacity: 0.6;
+      }
+
       /* CAMERA MESSAGE */
       #message {
         position: fixed;
@@ -198,6 +202,7 @@
       id="scene"
       mindar-image="
         imageTargetSrc: ./targets.mind;
+        autoStart: false;
         maxTrack: 1;
         uiScanning: no;
         uiLoading: no;
@@ -241,6 +246,7 @@
           width="1"
           height="0.5625"
           visible="false"
+          material="transparent: true; opacity: 0"
         ></a-video>
       </a-entity>
 
@@ -253,6 +259,7 @@
           width="1"
           height="0.5625"
           visible="false"
+          material="transparent: true; opacity: 0"
         ></a-video>
       </a-entity>
     </a-scene>
@@ -290,6 +297,9 @@
         },
       };
 
+      const FADE_DUR = 400; // ms
+
+      const scene = document.getElementById("scene");
       const start = document.getElementById("start");
       const startButton = document.getElementById("startButton");
       const message = document.getElementById("message");
@@ -313,16 +323,109 @@
         artist02: false,
       };
 
-      // スタートボタン押下時の処理
-      startButton.addEventListener("click", () => {
-        video01.load();
-        video02.load();
+      // ===== fadeIn/fadeOut(タイマー競合対策版) =====
+      const fadeTimers = new Map(); // plane要素 → 非表示予約タイマーID
 
-        start.style.display = "none";
-        message.style.display = "block";
+      function clearFadeTimer(plane) {
+        const t = fadeTimers.get(plane);
+        if (t) {
+          clearTimeout(t);
+          fadeTimers.delete(plane);
+        }
+      }
+
+      function fadeInPlane(plane) {
+        clearFadeTimer(plane); // 予約されていた非表示タイマーを破棄
+
+        plane.removeAttribute("animation__fadeout");
+        plane.setAttribute("visible", true);
+        plane.setAttribute("animation__fadein", {
+          property: "material.opacity",
+          from: 0,
+          to: 1,
+          dur: FADE_DUR,
+          easing: "easeInOutQuad",
+        });
+      }
+
+      function fadeOutPlane(plane) {
+        clearFadeTimer(plane); // 直前の非表示タイマーが残っていれば破棄
+
+        plane.removeAttribute("animation__fadein");
+        plane.setAttribute("animation__fadeout", {
+          property: "material.opacity",
+          from: 1,
+          to: 0,
+          dur: FADE_DUR,
+          easing: "easeInOutQuad",
+        });
+
+        const timerId = setTimeout(() => {
+          plane.setAttribute("visible", false);
+          fadeTimers.delete(plane);
+        }, FADE_DUR);
+
+        fadeTimers.set(plane, timerId);
+      }
+
+      // ===== play/pause競合対策 =====
+      const playPromises = new Map(); // video要素 → 進行中のplay() Promise
+
+      function safePlay(video) {
+        const p = video.play();
+        if (p !== undefined) {
+          playPromises.set(video, p);
+          p.catch((e) => console.log("play error:", e)).finally(() => {
+            playPromises.delete(video);
+          });
+        }
+      }
+
+      async function safePause(video) {
+        const pending = playPromises.get(video);
+        if (pending) {
+          try {
+            await pending;
+          } catch (e) {
+            /* noop */
+          }
+        }
+        video.pause();
+      }
+
+      // ===== AR開始(ボタン押下時に手動start) =====
+      startButton.addEventListener("click", async () => {
+        startButton.disabled = true;
+        startButton.textContent = "カメラを起動しています…";
+
+        try {
+          const arSystem = scene.systems["mindar-image-system"];
+
+          if (!arSystem) {
+            throw new Error("MindAR systemが見つかりません");
+          }
+
+          await arSystem.start();
+
+          video01.load();
+          video02.load();
+
+          start.style.display = "none";
+          message.style.display = "block";
+        } catch (error) {
+          console.error("AR START ERROR:", error);
+
+          startButton.disabled = false;
+          startButton.textContent = "AR体験をはじめる";
+
+          alert(
+            "カメラを起動できませんでした。\n" +
+              "ブラウザのカメラ使用許可を確認してください。",
+          );
+        }
       });
 
-      // 字幕制御
+      // ===== 字幕制御 =====
       function bindCaptions(video, key) {
         video.addEventListener("timeupdate", () => {
           const conf = CONFIG[key];
@@ -348,7 +451,7 @@
       bindCaptions(video01, "artist01");
       bindCaptions(video02, "artist02");
 
-      // ミュート解除ボタン
+      // ===== ミュート解除ボタン =====
       unmuteBtn.addEventListener("click", () => {
         if (currentKey) {
           const v = currentKey === "artist01" ? video01 : video02;
@@ -357,7 +460,7 @@
         unmuteBtn.style.display = "none";
       });
 
-      // 動画再生終了時の制御
+      // ===== 動画再生終了時 =====
       function bindEnded(video, key) {
         video.addEventListener("ended", () => {
           const conf = CONFIG[key];
@@ -376,31 +479,36 @@
       bindEnded(video01, "artist01");
       bindEnded(video02, "artist02");
 
-      // CTA閉じるボタン
+      // ===== CTA閉じるボタン =====
       ctaClose.addEventListener("click", () => {
         cta.classList.remove("show");
         pauseBeat.classList.remove("show");
+
+        fadeOutPlane(plane01);
+        fadeOutPlane(plane02);
+
         message.style.display = "block";
         message.textContent = "イラストにカメラを向けてください";
       });
 
-      // TARGET 01 イベント
+      // ===== TARGET 01 =====
       target01.addEventListener("targetFound", () => {
         console.log("TARGET 01 FOUND");
         currentKey = "artist01";
         message.style.display = "none";
 
-        video02.pause();
-        plane02.setAttribute("visible", false);
+        safePause(video02);
+        fadeOutPlane(plane02);
 
-        plane01.setAttribute("visible", true);
-        video01.play().catch((e) => console.log("artist01 play error:", e));
+        video01.currentTime = 0;
+        fadeInPlane(plane01);
+        safePlay(video01);
       });
 
       target01.addEventListener("targetLost", () => {
         console.log("TARGET 01 LOST");
-        plane01.setAttribute("visible", false);
-        video01.pause();
+        fadeOutPlane(plane01);
+        safePause(video01);
         caption.classList.remove("show");
         unmuteBtn.style.display = "none";
 
@@ -410,29 +518,64 @@
         }
       });
 
-      // TARGET 02 イベント
+      // ===== TARGET 02 =====
       target02.addEventListener("targetFound", () => {
         console.log("TARGET 02 FOUND");
         currentKey = "artist02";
         message.style.display = "none";
 
-        video01.pause();
-        plane01.setAttribute("visible", false);
+        safePause(video01);
+        fadeOutPlane(plane01);
 
-        plane02.setAttribute("visible", true);
-        video02.play().catch((e) => console.log("artist02 play error:", e));
+        video02.currentTime = 0;
+        fadeInPlane(plane02);
+        safePlay(video02);
       });
 
       target02.addEventListener("targetLost", () => {
         console.log("TARGET 02 LOST");
-        plane02.setAttribute("visible", false);
-        video02.pause();
+        fadeOutPlane(plane02);
+        safePause(video02);
         caption.classList.remove("show");
         unmuteBtn.style.display = "none";
 
         if (!cta.classList.contains("show")) {
           message.style.display = "block";
           message.textContent = "イラストにカメラを向けてください";
+        }
+      });
+
+      // ===== 画面復帰時の強制リセット(WebGLコンテキスト破棄対策) =====
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          console.log("PAGE RESUMED — resetting AR video state");
+
+          safePause(video01);
+          safePause(video02);
+
+          clearFadeTimer(plane01);
+          clearFadeTimer(plane02);
+          plane01.removeAttribute("animation__fadein");
+          plane01.removeAttribute("animation__fadeout");
+          plane02.removeAttribute("animation__fadein");
+          plane02.removeAttribute("animation__fadeout");
+          plane01.setAttribute("visible", false);
+          plane02.setAttribute("visible", false);
+          plane01.setAttribute("material", "opacity", 0);
+          plane02.setAttribute("material", "opacity", 0);
+
+          video01.load();
+          video02.load();
+
+          caption.classList.remove("show");
+          unmuteBtn.style.display = "none";
+
+          currentKey = null;
+
+          if (!cta.classList.contains("show")) {
+            message.style.display = "block";
+            message.textContent = "イラストにカメラを向けてください";
+          }
         }
       });
     </script>
