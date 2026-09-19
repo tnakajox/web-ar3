@@ -7,10 +7,8 @@
 
   <title>AR Artist</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -40,7 +38,6 @@
       border-radius: 12px;
       background: white;
       color: black;
-      cursor: pointer;
     }
 
     #message {
@@ -54,12 +51,6 @@
       padding: 10px 18px;
       border-radius: 20px;
       font-size: 14px;
-      display: none;
-    }
-
-    a-scene {
-      position: fixed;
-      inset: 0;
     }
   </style>
 </head>
@@ -111,16 +102,13 @@
 
     </a-assets>
 
-    <!-- カメラ -->
     <a-camera
       position="0 0 0"
       look-controls="enabled: false">
     </a-camera>
 
 
-    <!-- ========================= -->
     <!-- TARGET 01 -->
-    <!-- ========================= -->
 
     <a-entity
       id="target01"
@@ -132,16 +120,14 @@
         position="0 0 0"
         width="1"
         height="0.5625"
-        rotation="0 0 0"
+        material="opacity: 0"
         visible="false">
       </a-video>
 
     </a-entity>
 
 
-    <!-- ========================= -->
     <!-- TARGET 02 -->
-    <!-- ========================= -->
 
     <a-entity
       id="target02"
@@ -153,7 +139,7 @@
         position="0 0 0"
         width="1"
         height="0.5625"
-        rotation="0 0 0"
+        material="opacity: 0"
         visible="false">
       </a-video>
 
@@ -181,15 +167,77 @@
 
 
     /*
+     * フェードイン
+     */
+
+    function fadeIn(plane) {
+
+      plane.setAttribute("visible", true);
+
+      let opacity = 0;
+
+      const timer = setInterval(() => {
+
+        opacity += 0.08;
+
+        if (opacity >= 1) {
+          opacity = 1;
+          clearInterval(timer);
+        }
+
+        plane.setAttribute(
+          "material",
+          "opacity",
+          opacity
+        );
+
+      }, 30);
+    }
+
+
+    /*
+     * フェードアウト
+     */
+
+    function fadeOut(plane) {
+
+      let opacity = 1;
+
+      const timer = setInterval(() => {
+
+        opacity -= 0.1;
+
+        if (opacity <= 0) {
+
+          opacity = 0;
+
+          clearInterval(timer);
+
+          plane.setAttribute("visible", false);
+        }
+
+        plane.setAttribute(
+          "material",
+          "opacity",
+          opacity
+        );
+
+      }, 30);
+    }
+
+
+    /*
      * AR開始
      */
 
     startButton.addEventListener("click", async () => {
 
       startScreen.style.display = "none";
+
       message.style.display = "block";
 
       try {
+
         await video01.play();
         video01.pause();
 
@@ -197,10 +245,13 @@
         video02.pause();
 
       } catch (e) {
+
         console.log("Video preload:", e);
+
       }
 
-      const arSystem = sceneEl.systems["mindar-image-system"];
+      const arSystem =
+        sceneEl.systems["mindar-image-system"];
 
       if (arSystem) {
         arSystem.start();
@@ -219,15 +270,15 @@
 
       message.style.display = "none";
 
-      plane01.setAttribute("visible", true);
-
-      video02.pause();
       plane02.setAttribute("visible", false);
+      video02.pause();
 
       video01.currentTime = 0;
 
+      fadeIn(plane01);
+
       video01.play().catch(err => {
-        console.log("video01 play:", err);
+        console.log(err);
       });
 
     });
@@ -237,7 +288,7 @@
 
       console.log("TARGET 01 LOST");
 
-      plane01.setAttribute("visible", false);
+      fadeOut(plane01);
 
       video01.pause();
 
@@ -254,15 +305,15 @@
 
       message.style.display = "none";
 
-      plane02.setAttribute("visible", true);
-
-      video01.pause();
       plane01.setAttribute("visible", false);
+      video01.pause();
 
       video02.currentTime = 0;
 
+      fadeIn(plane02);
+
       video02.play().catch(err => {
-        console.log("video02 play:", err);
+        console.log(err);
       });
 
     });
@@ -272,7 +323,7 @@
 
       console.log("TARGET 02 LOST");
 
-      plane02.setAttribute("visible", false);
+      fadeOut(plane02);
 
       video02.pause();
 
