@@ -297,7 +297,7 @@
         },
       };
 
-      const FADE_DUR = 400; // ms
+      const FADE_DUR = 800; // ms
 
       const scene = document.getElementById("scene");
       const start = document.getElementById("start");
@@ -335,15 +335,25 @@
       }
 
       function fadeInPlane(plane) {
-        clearFadeTimer(plane); // 予約されていた非表示タイマーを破棄
+        clearFadeTimer(plane);
 
         plane.removeAttribute("animation__fadeout");
+
         plane.setAttribute("visible", true);
+
+        // 必ず透明な状態から開始
+
+        plane.setAttribute("material", "opacity", 0);
+
         plane.setAttribute("animation__fadein", {
           property: "material.opacity",
+
           from: 0,
+
           to: 1,
+
           dur: FADE_DUR,
+
           easing: "easeInOutQuad",
         });
       }
