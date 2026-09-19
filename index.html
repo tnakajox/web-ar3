@@ -2,138 +2,174 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AR Artist</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-
   <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overflow: hidden; background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
     }
 
     /* 最初の画面 */
     #start {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
       background: #111;
     }
-
-    #start p {
-      color: white;
-      font-size: 15px;
-      margin-bottom: 20px;
-    }
-
+    #start p { color: white; font-size: 15px; margin-bottom: 20px; }
     #start button {
-      padding: 18px 32px;
-
-      font-size: 18px;
-
-      border: none;
-      border-radius: 12px;
-
-      background: white;
-      color: black;
+      padding: 18px 32px; font-size: 18px;
+      border: none; border-radius: 12px;
+      background: white; color: black;
     }
-
-    #start button:disabled {
-      opacity: 0.6;
-    }
+    #start button:disabled { opacity: 0.6; }
 
     /* カメラ起動後の案内 */
     #message {
-      position: fixed;
-
-      top: 30px;
-      left: 50%;
-
-      transform: translateX(-50%);
-
-      z-index: 500;
-
-      color: white;
-
-      background: rgba(0, 0, 0, 0.65);
-
-      padding: 10px 18px;
-
-      border-radius: 20px;
-
-      font-size: 14px;
-
-      display: none;
-
-      white-space: nowrap;
+      position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+      z-index: 500; color: white; background: rgba(0,0,0,0.65);
+      padding: 10px 18px; border-radius: 20px; font-size: 14px;
+      display: none; white-space: nowrap;
     }
 
-    a-scene {
+    a-scene { position: fixed; inset: 0; }
+
+    /*
+     * =========================
+     * 字幕(本人の言葉をそのまま出す)
+     * =========================
+     */
+    #caption {
       position: fixed;
-      inset: 0;
+      left: 50%;
+      bottom: 90px;
+      transform: translateX(-50%);
+      z-index: 600;
+      max-width: 86%;
+      color: white;
+      background: rgba(0,0,0,0.55);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      line-height: 1.6;
+      text-align: center;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    #caption.show { display: block; opacity: 1; }
+
+    /*
+     * =========================
+     * 音声オン(儀式として控えめに出す)
+     * =========================
+     */
+    #unmute {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 600;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.9);
+      font-size: 22px;
+      display: none;
+    }
+
+    /*
+     * =========================
+     * 再生後の"間"(黒フェード)
+     * =========================
+     */
+    #pause-beat {
+      position: fixed; inset: 0; z-index: 700;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease;
+    }
+    #pause-beat.show { opacity: 1; pointer-events: auto; }
+
+    /*
+     * =========================
+     * CTA(間のあとに出す)
+     * =========================
+     */
+    #cta {
+      position: fixed; inset: 0; z-index: 800;
+      display: none;
+      flex-direction: column;
+      justify-content: center; align-items: center;
+      background: rgba(0,0,0,0.92);
+      color: white;
+      text-align: center;
+      padding: 0 24px;
+    }
+    #cta.show { display: flex; }
+    #cta p {
+      font-size: 17px;
+      line-height: 1.8;
+      margin-bottom: 28px;
+    }
+    #cta a {
+      display: inline-block;
+      padding: 14px 28px;
+      background: white;
+      color: black;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 15px;
+      margin-bottom: 14px;
+    }
+    #cta button {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 13px;
+      text-decoration: underline;
     }
   </style>
 </head>
 
-
 <body>
 
-
-  <!-- =========================
-       最初の画面
-  ========================== -->
-
+  <!-- 最初の画面 -->
   <div id="start">
-
-    <p>
-      カメラを使って作品を体験します
-    </p>
-
-    <button id="startButton">
-      AR体験をはじめる
-    </button>
-
+    <p>カメラを使って作品を体験します</p>
+    <button id="startButton">AR体験をはじめる</button>
   </div>
 
+  <!-- カメラ起動後の案内 -->
+  <div id="message">イラストにカメラを向けてください</div>
 
-  <!-- =========================
-       カメラ起動後の案内
-  ========================== -->
+  <!-- 字幕(本人の言葉) -->
+  <div id="caption"></div>
 
-  <div id="message">
-    イラストにカメラを向けてください
+  <!-- 音声オン -->
+  <button id="unmute">🔊</button>
+
+  <!-- 再生後の間 -->
+  <div id="pause-beat"></div>
+
+  <!-- CTA -->
+  <div id="cta">
+    <p id="cta-text"></p>
+    <a id="cta-link" href="#" target="_blank">グッズを見る</a>
+    <button id="cta-close">閉じてもう一度体験する</button>
   </div>
 
-
-  <!-- =========================
-       MindAR
-  ========================== -->
-
+  <!-- MindAR -->
   <a-scene
-
     id="scene"
-
     mindar-image="
       imageTargetSrc: ./targets.mind;
       autoStart: false;
@@ -141,442 +177,260 @@
       uiScanning: no;
       uiLoading: no;
     "
-
     color-space="sRGB"
-
-    renderer="
-      colorManagement: true;
-      physicallyCorrectLights;
-    "
-
+    renderer="colorManagement: true; physicallyCorrectLights;"
     vr-mode-ui="enabled: false"
-
     device-orientation-permission-ui="enabled: false"
   >
 
-
-    <!-- =========================
-         動画
-    ========================== -->
-
     <a-assets>
-
-      <video
-        id="artist01"
-        src="./artist01.mp4"
-        preload="auto"
-        loop
-        muted
-        playsinline
-        webkit-playsinline
-      ></video>
-
-      <video
-        id="artist02"
-        src="./artist02.mp4"
-        preload="auto"
-        loop
-        muted
-        playsinline
-        webkit-playsinline
-      ></video>
-
+      <video id="artist01" src="./artist01.mp4" preload="auto" muted playsinline webkit-playsinline></video>
+      <video id="artist02" src="./artist02.mp4" preload="auto" muted playsinline webkit-playsinline></video>
     </a-assets>
 
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- =========================
-         カメラ
-    ========================== -->
-
-    <a-camera
-      position="0 0 0"
-      look-controls="enabled: false"
-    ></a-camera>
-
-
-    <!-- =========================
-         TARGET 01
-    ========================== -->
-
-    <a-entity
-      id="target01"
-      mindar-image-target="targetIndex: 0"
-    >
-
-      <a-video
-
-        id="videoPlane01"
-
-        src="#artist01"
-
-        position="0 0 0"
-
-        width="1"
-        height="0.5625"
-
-        visible="false"
-
-      ></a-video>
-
+    <a-entity id="target01" mindar-image-target="targetIndex: 0">
+      <a-video id="videoPlane01" src="#artist01" position="0 0 0" width="1" height="0.5625" visible="false"></a-video>
     </a-entity>
 
-
-    <!-- =========================
-         TARGET 02
-    ========================== -->
-
-    <a-entity
-      id="target02"
-      mindar-image-target="targetIndex: 1"
-    >
-
-      <a-video
-
-        id="videoPlane02"
-
-        src="#artist02"
-
-        position="0 0 0"
-
-        width="1"
-        height="0.5625"
-
-        visible="false"
-
-      ></a-video>
-
+    <a-entity id="target02" mindar-image-target="targetIndex: 1">
+      <a-video id="videoPlane02" src="#artist02" position="0 0 0" width="1" height="0.5625" visible="false"></a-video>
     </a-entity>
-
 
   </a-scene>
 
-
   <script>
+
+    /*
+     * =========================
+     * ★ ここを編集して使う ★
+     * =========================
+     *
+     * captions: 本人が実際に話した言葉を、
+     *           そのまま(要約せず)時間指定で入れる。
+     *           言い淀みや方言もそのまま残すこと。
+     *
+     * unmuteAt: 顔が写る/声が始まる秒数。
+     *           ここでミュート解除ボタンを控えめに出す。
+     *
+     * ctaText / ctaUrl / ctaDelay:
+     *   動画終了後、ctaDelay秒の"間"(黒フェード)を置いてから
+     *   本人からの直接メッセージ+リンクを出す。
+     */
+
+    const CONFIG = {
+      artist01: {
+        unmuteAt: 4, // 秒。顔・声が出るタイミングに合わせて調整
+        captions: [
+          // { start: 秒, end: 秒, text: "本人の言葉そのまま" }
+          { start: 0,  end: 4,  text: "" }, // 手元だけの間は字幕なし
+          { start: 4,  end: 9,  text: "これ描いてるとき、なんも考えてない。落ち着くから。" },
+          { start: 9,  end: 14, text: "好きな色から、順番に塗っていくの。" },
+        ],
+        ctaDelay: 2.5, // 終了後、間を置く秒数
+        ctaText: "ありがとう、を、届けてください。",
+        ctaUrl: "#" // グッズページのURLに置き換える
+      },
+      artist02: {
+        unmuteAt: 4,
+        captions: [
+          { start: 0, end: 4, text: "" },
+          { start: 4, end: 10, text: "" }, // ★本人の言葉に差し替える
+        ],
+        ctaDelay: 2.5,
+        ctaText: "ありがとう、を、届けてください。",
+        ctaUrl: "#"
+      }
+    };
 
     /*
      * =========================
      * 要素取得
      * =========================
      */
+    const scene = document.getElementById("scene");
+    const start = document.getElementById("start");
+    const startButton = document.getElementById("startButton");
+    const message = document.getElementById("message");
 
-    const scene =
-      document.getElementById("scene");
+    const target01 = document.getElementById("target01");
+    const target02 = document.getElementById("target02");
 
-    const start =
-      document.getElementById("start");
+    const video01 = document.getElementById("artist01");
+    const video02 = document.getElementById("artist02");
 
-    const startButton =
-      document.getElementById("startButton");
+    const plane01 = document.getElementById("videoPlane01");
+    const plane02 = document.getElementById("videoPlane02");
 
-    const message =
-      document.getElementById("message");
+    const caption = document.getElementById("caption");
+    const unmuteBtn = document.getElementById("unmute");
+    const pauseBeat = document.getElementById("pause-beat");
+    const cta = document.getElementById("cta");
+    const ctaText = document.getElementById("cta-text");
+    const ctaLink = document.getElementById("cta-link");
+    const ctaClose = document.getElementById("cta-close");
 
-
-    const target01 =
-      document.getElementById("target01");
-
-    const target02 =
-      document.getElementById("target02");
-
-
-    const video01 =
-      document.getElementById("artist01");
-
-    const video02 =
-      document.getElementById("artist02");
-
-
-    const plane01 =
-      document.getElementById("videoPlane01");
-
-    const plane02 =
-      document.getElementById("videoPlane02");
-
+    let currentKey = null; // "artist01" | "artist02"
+    let unmuteShown = { artist01: false, artist02: false };
 
     /*
      * =========================
-     * AR開始
+     * AR開始(ボタン押下で即開始)
      * =========================
-     *
-     * ここが重要。
-     *
-     * sceneがloadedになるのを待ったり、
-     * arReadyを待ったりしない。
-     *
-     * ボタンを押した瞬間に
-     * MindARを開始する。
      */
+    startButton.addEventListener("click", async () => {
+      startButton.disabled = true;
+      startButton.textContent = "カメラを起動しています…";
 
-    startButton.addEventListener(
-      "click",
-      async () => {
+      try {
+        const arSystem = scene.systems["mindar-image-system"];
+        if (!arSystem) throw new Error("MindAR systemが見つかりません");
 
-        startButton.disabled = true;
+        await arSystem.start();
 
-        startButton.textContent =
-          "カメラを起動しています…";
+        start.style.display = "none";
+        message.style.display = "block";
+        message.textContent = "イラストにカメラを向けてください";
 
+      } catch (error) {
+        console.error("AR START ERROR:", error);
+        startButton.disabled = false;
+        startButton.textContent = "AR体験をはじめる";
+        alert("カメラを起動できませんでした。\nブラウザのカメラ使用許可を確認してください。");
+      }
+    });
 
-        try {
+    /*
+     * =========================
+     * 字幕更新(timeupdateで同期)
+     * =========================
+     */
+    function bindCaptions(video, key) {
+      video.addEventListener("timeupdate", () => {
+        const conf = CONFIG[key];
+        const t = video.currentTime;
 
-          const arSystem =
-            scene.systems["mindar-image-system"];
+        const hit = conf.captions.find(c => t >= c.start && t < c.end);
 
-
-          if (!arSystem) {
-
-            throw new Error(
-              "MindAR systemが見つかりません"
-            );
-
+        if (hit && hit.text) {
+          if (caption.textContent !== hit.text) {
+            caption.textContent = hit.text;
           }
-
-
-          /*
-           * カメラ＋AR開始
-           */
-
-          await arSystem.start();
-
-
-          /*
-           * ここまで来たら
-           * カメラ起動成功
-           */
-
-          start.style.display = "none";
-
-          message.style.display = "block";
-
-          message.textContent =
-            "イラストにカメラを向けてください";
-
-
-        } catch (error) {
-
-          console.error(
-            "AR START ERROR:",
-            error
-          );
-
-
-          startButton.disabled = false;
-
-          startButton.textContent =
-            "AR体験をはじめる";
-
-
-          alert(
-            "カメラを起動できませんでした。\n" +
-            "ブラウザのカメラ使用許可を確認してください。"
-          );
-
+          caption.classList.add("show");
+        } else {
+          caption.classList.remove("show");
         }
 
-      }
-    );
+        // ミュート解除ボタンを"発見"として出す
+        if (!unmuteShown[key] && t >= conf.unmuteAt) {
+          unmuteShown[key] = true;
+          unmuteBtn.style.display = "block";
+        }
+      });
+    }
 
+    bindCaptions(video01, "artist01");
+    bindCaptions(video02, "artist02");
+
+    unmuteBtn.addEventListener("click", () => {
+      if (currentKey) {
+        const v = currentKey === "artist01" ? video01 : video02;
+        v.muted = false;
+      }
+      unmuteBtn.style.display = "none";
+    });
 
     /*
      * =========================
-     * TARGET 01 FOUND
+     * 動画終了 → 間 → CTA
      * =========================
      */
+    function bindEnded(video, key) {
+      video.addEventListener("ended", () => {
+        const conf = CONFIG[key];
 
-    target01.addEventListener(
-      "targetFound",
-      () => {
+        caption.classList.remove("show");
+        unmuteBtn.style.display = "none";
 
-        console.log(
-          "TARGET 01 FOUND"
-        );
+        pauseBeat.classList.add("show");
 
+        setTimeout(() => {
+          ctaText.textContent = conf.ctaText;
+          ctaLink.href = conf.ctaUrl;
+          cta.classList.add("show");
+        }, conf.ctaDelay * 1000);
+      });
+    }
 
-        /*
-         * 案内を消す
-         */
+    bindEnded(video01, "artist01");
+    bindEnded(video02, "artist02");
 
-        message.style.display =
-          "none";
-
-
-        /*
-         * TARGET 02停止
-         */
-
-        video02.pause();
-
-        plane02.setAttribute(
-          "visible",
-          false
-        );
-
-
-        /*
-         * TARGET 01表示
-         */
-
-        plane01.setAttribute(
-          "visible",
-          true
-        );
-
-
-        /*
-         * 最初から再生
-         */
-
-        video01.currentTime = 0;
-
-
-        video01.play().catch(
-          error => {
-
-            console.log(
-              "artist01 play error:",
-              error
-            );
-
-          }
-        );
-
-      }
-    );
-
+    ctaClose.addEventListener("click", () => {
+      cta.classList.remove("show");
+      pauseBeat.classList.remove("show");
+      message.style.display = "block";
+      message.textContent = "イラストにカメラを向けてください";
+    });
 
     /*
      * =========================
-     * TARGET 01 LOST
+     * TARGET 01
      * =========================
+     * ロスト時は頭出ししない(一時停止のみ)
      */
+    target01.addEventListener("targetFound", () => {
+      currentKey = "artist01";
+      message.style.display = "none";
 
-    target01.addEventListener(
-      "targetLost",
-      () => {
+      video02.pause();
+      plane02.setAttribute("visible", false);
 
-        console.log(
-          "TARGET 01 LOST"
-        );
+      plane01.setAttribute("visible", true);
+      video01.play().catch(e => console.log("artist01 play error:", e));
+    });
 
+    target01.addEventListener("targetLost", () => {
+      plane01.setAttribute("visible", false);
+      video01.pause(); // currentTimeはリセットしない → 続きから再生される
 
-        plane01.setAttribute(
-          "visible",
-          false
-        );
+      caption.classList.remove("show");
+      unmuteBtn.style.display = "none";
 
-
-        video01.pause();
-
-
-        message.style.display =
-          "block";
-
-        message.textContent =
-          "イラストにカメラを向けてください";
-
+      if (!cta.classList.contains("show")) {
+        message.style.display = "block";
+        message.textContent = "イラストにカメラを向けてください";
       }
-    );
-
+    });
 
     /*
      * =========================
-     * TARGET 02 FOUND
+     * TARGET 02
      * =========================
      */
+    target02.addEventListener("targetFound", () => {
+      currentKey = "artist02";
+      message.style.display = "none";
 
-    target02.addEventListener(
-      "targetFound",
-      () => {
+      video01.pause();
+      plane01.setAttribute("visible", false);
 
-        console.log(
-          "TARGET 02 FOUND"
-        );
+      plane02.setAttribute("visible", true);
+      video02.play().catch(e => console.log("artist02 play error:", e));
+    });
 
+    target02.addEventListener("targetLost", () => {
+      plane02.setAttribute("visible", false);
+      video02.pause();
 
-        /*
-         * 案内を消す
-         */
+      caption.classList.remove("show");
+      unmuteBtn.style.display = "none";
 
-        message.style.display =
-          "none";
-
-
-        /*
-         * TARGET 01停止
-         */
-
-        video01.pause();
-
-        plane01.setAttribute(
-          "visible",
-          false
-        );
-
-
-        /*
-         * TARGET 02表示
-         */
-
-        plane02.setAttribute(
-          "visible",
-          true
-        );
-
-
-        /*
-         * 最初から再生
-         */
-
-        video02.currentTime = 0;
-
-
-        video02.play().catch(
-          error => {
-
-            console.log(
-              "artist02 play error:",
-              error
-            );
-
-          }
-        );
-
+      if (!cta.classList.contains("show")) {
+        message.style.display = "block";
+        message.textContent = "イラストにカメラを向けてください";
       }
-    );
-
-
-    /*
-     * =========================
-     * TARGET 02 LOST
-     * =========================
-     */
-
-    target02.addEventListener(
-      "targetLost",
-      () => {
-
-        console.log(
-          "TARGET 02 LOST"
-        );
-
-
-        plane02.setAttribute(
-          "visible",
-          false
-        );
-
-
-        video02.pause();
-
-
-        message.style.display =
-          "block";
-
-        message.textContent =
-          "イラストにカメラを向けてください";
-
-      }
-    );
+    });
 
   </script>
 
