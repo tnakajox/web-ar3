@@ -23,7 +23,6 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: #000;
         font-family:
           -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
       }
@@ -70,11 +69,6 @@
         font-size: 14px;
         display: none;
         white-space: nowrap;
-      }
-
-      a-scene {
-        position: fixed;
-        inset: 0;
       }
 
       /* CAPTION */
@@ -321,7 +315,6 @@
 
       // スタートボタン押下時の処理
       startButton.addEventListener("click", () => {
-        // iOS等の動画自動再生制限を解除するために一度loadを実行
         video01.load();
         video02.load();
 
