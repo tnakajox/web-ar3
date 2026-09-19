@@ -284,15 +284,20 @@
 
       <!-- TARGET 01 -->
       <a-entity id="target01" mindar-image-target="targetIndex: 0">
-        <!-- ★ 安全なダスト（光の粒）エフェクト -->
-        <a-entity safe-dust="count: 35; color: #FFF0C0;"></a-entity>
+        <!-- ★ 動画拡大に合わせてダストの量と範囲を拡張 -->
+        <a-entity
+          safe-dust="count: 60; color: #FFF0C0;"
+          scale="3 3 3"
+          position="0 0 0.5"
+        ></a-entity>
 
+        <!-- ★ 動画サイズを4倍にし、Z軸でカメラ手前(1)に浮かせる -->
         <a-video
           id="videoPlane01"
           src="#artist01"
-          position="0 0 0"
-          width="1"
-          height="0.5625"
+          position="0 0 1"
+          width="4"
+          height="2.25"
           visible="false"
           material="transparent: true; opacity: 0"
         ></a-video>
@@ -300,15 +305,20 @@
 
       <!-- TARGET 02 -->
       <a-entity id="target02" mindar-image-target="targetIndex: 1">
-        <!-- ★ 安全なダスト（光の粒）エフェクト -->
-        <a-entity safe-dust="count: 35; color: #FFF0C0;"></a-entity>
+        <!-- ★ 動画拡大に合わせてダストの量と範囲を拡張 -->
+        <a-entity
+          safe-dust="count: 60; color: #FFF0C0;"
+          scale="3 3 3"
+          position="0 0 0.5"
+        ></a-entity>
 
+        <!-- ★ 動画サイズを4倍にし、Z軸でカメラ手前(1)に浮かせる -->
         <a-video
           id="videoPlane02"
           src="#artist02"
-          position="0 0 0"
-          width="1"
-          height="0.5625"
+          position="0 0 1"
+          width="4"
+          height="2.25"
           visible="false"
           material="transparent: true; opacity: 0"
         ></a-video>
@@ -463,13 +473,13 @@
         }
       });
 
-      let typewriterTimer = null; // ★追加:1文字ずつ表示するタイマー
+      let typewriterTimer = null;
 
       function showThanksTypewriter(key) {
         const conf = CONFIG[key];
 
         clearTimeout(messageTimer);
-        clearInterval(typewriterTimer); // ★追加:前回のタイプライターが残ってたら止める
+        clearInterval(typewriterTimer);
 
         thanks.classList.remove("show");
         thanks.textContent = "";
@@ -487,13 +497,13 @@
             if (i >= text.length) {
               clearInterval(typewriterTimer);
             }
-          }, 80); // 1文字あたり80ms
+          }, 80);
         }, conf.messageDelay * 1000);
       }
 
       function hideThanks() {
         clearTimeout(messageTimer);
-        clearInterval(typewriterTimer); // ★追加
+        clearInterval(typewriterTimer);
         thanks.classList.remove("show");
       }
 
