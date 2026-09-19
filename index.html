@@ -317,6 +317,10 @@
       const ctaLink = document.getElementById("cta-link");
       const ctaClose = document.getElementById("cta-close");
 
+      let lostTimer01 = null;
+
+      let lostTimer02 = null;
+
       let currentKey = null;
       let unmuteShown = {
         artist01: false,
@@ -503,6 +507,7 @@
 
       // ===== TARGET 01 =====
       target01.addEventListener("targetFound", () => {
+        clearTimeout(lostTimer01);
         console.log("TARGET 01 FOUND");
         currentKey = "artist01";
         message.style.display = "none";
@@ -517,19 +522,37 @@
 
       target01.addEventListener("targetLost", () => {
         console.log("TARGET 01 LOST");
-        fadeOutPlane(plane01);
-        safePause(video01);
-        caption.classList.remove("show");
-        unmuteBtn.style.display = "none";
 
-        if (!cta.classList.contains("show")) {
-          message.style.display = "block";
-          message.textContent = "イラストにカメラを向けてください";
-        }
+        clearTimeout(lostTimer01);
+
+        lostTimer01 = setTimeout(() => {
+          // 1秒以内に再認識していたら何もしない
+
+          if (currentKey !== "artist01") {
+            return;
+          }
+
+          fadeOutPlane(plane01);
+
+          safePause(video01);
+
+          caption.classList.remove("show");
+
+          unmuteBtn.style.display = "none";
+
+          currentKey = null;
+
+          if (!cta.classList.contains("show")) {
+            message.style.display = "block";
+
+            message.textContent = "イラストにカメラを向けてください";
+          }
+        }, 1000);
       });
 
       // ===== TARGET 02 =====
       target02.addEventListener("targetFound", () => {
+        clearTimeout(lostTimer02);
         console.log("TARGET 02 FOUND");
         currentKey = "artist02";
         message.style.display = "none";
@@ -544,15 +567,29 @@
 
       target02.addEventListener("targetLost", () => {
         console.log("TARGET 02 LOST");
-        fadeOutPlane(plane02);
-        safePause(video02);
-        caption.classList.remove("show");
-        unmuteBtn.style.display = "none";
 
-        if (!cta.classList.contains("show")) {
-          message.style.display = "block";
-          message.textContent = "イラストにカメラを向けてください";
-        }
+        clearTimeout(lostTimer02);
+
+        lostTimer02 = setTimeout(() => {
+          if (currentKey !== "artist02") {
+            return;
+          }
+
+          fadeOutPlane(plane02);
+
+          safePause(video02);
+
+          caption.classList.remove("show");
+
+          unmuteBtn.style.display = "none";
+
+          currentKey = null;
+
+          if (!cta.classList.contains("show")) {
+            message.style.display = "block";
+            message.textContent = "イラストにカメラを向けてください";
+          }
+        }, 1000);
       });
 
       // ===== 画面復帰時の強制リセット(WebGLコンテキスト破棄対策) =====
