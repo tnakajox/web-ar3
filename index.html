@@ -112,24 +112,26 @@
   id="scene"
 
   mindar-image="
+
     imageTargetSrc: ./targets.mind;
+
+    autoStart: false;
+
     maxTrack: 1;
+
     uiScanning: no;
+
     uiLoading: no;
+
   "
 
   color-space="sRGB"
 
-  renderer="
-    colorManagement: true;
-    physicallyCorrectLights;
-  "
+  renderer="colorManagement: true; physicallyCorrectLights"
 
   vr-mode-ui="enabled: false"
 
-  device-orientation-permission-ui="enabled: false"
-
->
+  device-orientation-permission-ui="enabled: false">
 
 
 <a-assets>
@@ -279,23 +281,42 @@ document.getElementById("videoPlane02");
 /*
  * スタート
  */
+const sceneEl = document.querySelector("#scene");
 
-startButton.addEventListener(
-  "click",
-  () => {
+let arSystem = null;
 
-    /*
-     * ここではMindARを直接startしない
-     *
-     * A-Frame / MindARに任せる
-     */
+sceneEl.addEventListener("loaded", () => {
+  arSystem = sceneEl.systems["mindar-image-system"];
+});
 
-    start.style.display = "none";
+sceneEl.addEventListener("arReady", () => {
+  console.log("AR READY");
 
-    message.style.display = "block";
+  start.style.display = "none";
+  message.style.display = "block";
+  message.textContent = "イラストにカメラを向けてください";
+});
 
+sceneEl.addEventListener("arError", (event) => {
+  console.error("AR ERROR", event);
+
+  start.style.display = "flex";
+  message.style.display = "block";
+  message.textContent = "カメラを起動できませんでした";
+});
+
+startButton.addEventListener("click", () => {
+
+  if (!arSystem) {
+    console.log("AR system is not ready");
+    return;
   }
-);
+
+  console.log("START AR");
+
+  arSystem.start();
+
+});
 
 
 
