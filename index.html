@@ -3,186 +3,87 @@
 <head>
   <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  >
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <title>この絵の、その先へ。</title>
+  <title>AR Artist</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
       background: #000;
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Noto Sans JP",
-        sans-serif;
     }
 
-    /* -------------------------
-       スタート画面
-    ------------------------- */
-
-    #startScreen {
+    #start {
       position: fixed;
       inset: 0;
+
       z-index: 1000;
 
       display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
+      justify-content: center;
       align-items: center;
 
-      padding-bottom: 60px;
-
-      background:
-        linear-gradient(
-          to bottom,
-          rgba(0,0,0,0.1),
-          rgba(0,0,0,0.85)
-        );
+      background: #111;
     }
 
-    #startButton {
-      border: 0;
-      border-radius: 999px;
+    #start button {
 
-      padding: 16px 30px;
+      padding: 18px 32px;
 
-      background: #fff;
-      color: #111;
+      font-size: 18px;
 
-      font-size: 16px;
-      font-weight: 700;
+      border: none;
 
-      box-shadow: 0 8px 30px rgba(0,0,0,.4);
+      border-radius: 12px;
+
+      background: white;
+
+      color: black;
+
     }
 
-    #startText {
-      color: #fff;
-      font-size: 14px;
-      margin-bottom: 18px;
+    #message {
 
-      text-align: center;
-      opacity: .9;
-    }
-
-
-    /* -------------------------
-       AR中の案内
-    ------------------------- */
-
-    #hint {
       position: fixed;
 
-      top: 24px;
+      top: 30px;
+
       left: 50%;
 
       transform: translateX(-50%);
 
       z-index: 500;
 
+      color: white;
+
+      background: rgba(0,0,0,.65);
+
       padding: 10px 18px;
 
-      color: #fff;
+      border-radius: 20px;
 
-      background: rgba(0,0,0,.45);
+      font-size: 14px;
 
-      border: 1px solid rgba(255,255,255,.45);
+      display: none;
 
-      border-radius: 999px;
-
-      font-size: 13px;
-
-      white-space: nowrap;
-
-      backdrop-filter: blur(8px);
     }
-
-
-    /* -------------------------
-       スキャン枠
-    ------------------------- */
-
-    #scan {
-      position: fixed;
-
-      left: 50%;
-      top: 50%;
-
-      transform: translate(-50%, -50%);
-
-      width: min(72vw, 300px);
-      height: min(72vw, 300px);
-
-      z-index: 400;
-
-      border: 1px solid rgba(255,255,255,.65);
-
-      border-radius: 24px;
-
-      pointer-events: none;
-    }
-
-    #scan::before,
-    #scan::after {
-
-      content: "";
-
-      position: absolute;
-
-      width: 34px;
-      height: 34px;
-
-      border-color: #fff;
-      border-style: solid;
-    }
-
-    #scan::before {
-
-      left: -2px;
-      top: -2px;
-
-      border-width: 3px 0 0 3px;
-
-      border-radius: 20px 0 0 0;
-    }
-
-    #scan::after {
-
-      right: -2px;
-      bottom: -2px;
-
-      border-width: 0 3px 3px 0;
-
-      border-radius: 0 0 20px 0;
-    }
-
-
-    /* -------------------------
-       A-Frame
-    ------------------------- */
 
     a-scene {
+
       position: fixed;
+
       inset: 0;
+
     }
 
   </style>
@@ -192,475 +93,369 @@
 <body>
 
 
-  <!-- =========================
-       スタート
-  ========================== -->
+<div id="start">
 
-  <div id="startScreen">
+  <button id="startButton">
+    AR体験をはじめる
+  </button>
 
-    <div id="startText">
-      カメラを使って作品を体験します
-    </div>
+</div>
 
-    <button id="startButton">
-      AR体験をはじめる
-    </button>
 
-  </div>
+<div id="message">
+  イラストにカメラを向けてください
+</div>
 
 
-  <!-- =========================
-       案内
-  ========================== -->
+<a-scene
 
-  <div id="hint">
-    イラストにカメラを向けてください
-  </div>
+  id="scene"
 
+  mindar-image="
+    imageTargetSrc: ./targets.mind;
+    maxTrack: 1;
+    uiScanning: no;
+    uiLoading: no;
+  "
 
-  <!-- =========================
-       スキャン枠
-  ========================== -->
+  color-space="sRGB"
 
-  <div id="scan"></div>
+  renderer="
+    colorManagement: true;
+    physicallyCorrectLights;
+  "
 
+  vr-mode-ui="enabled: false"
 
-  <!-- =========================
-       AR
-  ========================== -->
+  device-orientation-permission-ui="enabled: false"
 
-  <a-scene
+>
 
-    id="scene"
 
-    mindar-image="
-      imageTargetSrc: ./targets.mind;
-      autoStart: false;
-      maxTrack: 1;
-      uiScanning: no;
-      uiLoading: no;
-    "
+<a-assets>
 
-    color-space="sRGB"
 
-    renderer="
-      colorManagement: true;
-      physicallyCorrectLights;
-    "
+<video
+  id="artist01"
 
-    vr-mode-ui="enabled: false"
+  src="./artist01.mp4"
 
-    device-orientation-permission-ui="enabled: false"
-  >
+  preload="auto"
 
+  loop
 
-    <!-- =========================
-         動画
-    ========================== -->
+  muted
 
-    <a-assets>
+  playsinline
 
-      <video
-        id="artist01"
-        src="./artist01.mp4"
-        preload="auto"
-        loop
-        muted
-        playsinline
-        webkit-playsinline
-      ></video>
+  webkit-playsinline
+></video>
 
-      <video
-        id="artist02"
-        src="./artist02.mp4"
-        preload="auto"
-        loop
-        muted
-        playsinline
-        webkit-playsinline
-      ></video>
 
-    </a-assets>
+<video
+  id="artist02"
 
+  src="./artist02.mp4"
 
-    <!-- カメラ -->
+  preload="auto"
 
-    <a-camera
-      position="0 0 0"
-      look-controls="enabled: false"
-    ></a-camera>
+  loop
 
+  muted
 
-    <!-- =========================
-         TARGET 01
-    ========================== -->
+  playsinline
 
-    <a-entity
-      id="target01"
-      mindar-image-target="targetIndex: 0"
-    >
+  webkit-playsinline
+></video>
 
-      <a-video
 
-        id="videoPlane01"
+</a-assets>
 
-        src="#artist01"
 
-        position="0 0 0"
+<a-camera
+  position="0 0 0"
+  look-controls="enabled: false">
+</a-camera>
 
-        width="1"
-        height="0.5625"
 
-        visible="false"
 
-        material="
-          transparent: true;
-          opacity: 0;
-        "
+<!-- TARGET 01 -->
 
-      ></a-video>
+<a-entity
+  id="target01"
+  mindar-image-target="targetIndex: 0"
+>
 
-    </a-entity>
+<a-video
 
+  id="videoPlane01"
 
-    <!-- =========================
-         TARGET 02
-    ========================== -->
+  src="#artist01"
 
-    <a-entity
-      id="target02"
-      mindar-image-target="targetIndex: 1"
-    >
+  position="0 0 0"
 
-      <a-video
+  width="1"
 
-        id="videoPlane02"
+  height="0.5625"
 
-        src="#artist02"
+  visible="false"
 
-        position="0 0 0"
+></a-video>
 
-        width="1"
-        height="0.5625"
+</a-entity>
 
-        visible="false"
 
-        material="
-          transparent: true;
-          opacity: 0;
-        "
 
-      ></a-video>
+<!-- TARGET 02 -->
 
-    </a-entity>
+<a-entity
+  id="target02"
+  mindar-image-target="targetIndex: 1"
+>
 
+<a-video
 
-  </a-scene>
+  id="videoPlane02"
 
+  src="#artist02"
 
-  <script>
+  position="0 0 0"
 
-    const scene = document.querySelector("#scene");
+  width="1"
 
-    const startScreen =
-      document.querySelector("#startScreen");
+  height="0.5625"
 
-    const startButton =
-      document.querySelector("#startButton");
+  visible="false"
 
-    const hint =
-      document.querySelector("#hint");
+></a-video>
 
-    const scan =
-      document.querySelector("#scan");
+</a-entity>
 
 
-    const target01 =
-      document.querySelector("#target01");
+</a-scene>
 
-    const target02 =
-      document.querySelector("#target02");
 
 
-    const video01 =
-      document.querySelector("#artist01");
+<script>
 
-    const video02 =
-      document.querySelector("#artist02");
 
+const start =
+document.getElementById("start");
 
-    const plane01 =
-      document.querySelector("#videoPlane01");
 
-    const plane02 =
-      document.querySelector("#videoPlane02");
+const startButton =
+document.getElementById("startButton");
 
 
-    let currentTarget = null;
+const message =
+document.getElementById("message");
 
 
-    /* =========================
-       動画を表示
-    ========================== */
+const target01 =
+document.getElementById("target01");
 
-    function showVideo(plane) {
 
-      plane.setAttribute("visible", true);
+const target02 =
+document.getElementById("target02");
 
-      plane.setAttribute(
-        "animation__fadein",
-        {
-          property: "material.opacity",
-          from: 0,
-          to: 1,
-          dur: 450,
-          easing: "easeOutQuad"
-        }
-      );
 
-    }
+const video01 =
+document.getElementById("artist01");
 
 
-    /* =========================
-       動画を非表示
-    ========================== */
+const video02 =
+document.getElementById("artist02");
 
-    function hideVideo(plane) {
 
-      plane.setAttribute(
-        "animation__fadeout",
-        {
-          property: "material.opacity",
-          from: 1,
-          to: 0,
-          dur: 300,
-          easing: "easeInQuad"
-        }
-      );
+const plane01 =
+document.getElementById("videoPlane01");
 
-      setTimeout(() => {
 
-        plane.setAttribute(
-          "visible",
-          false
-        );
+const plane02 =
+document.getElementById("videoPlane02");
 
-      }, 320);
 
-    }
 
+/*
+ * スタート
+ */
 
-    /* =========================
-       AR開始
-    ========================== */
+startButton.addEventListener(
+  "click",
+  () => {
 
-    startButton.addEventListener(
-      "click",
-      async () => {
+    /*
+     * ここではMindARを直接startしない
+     *
+     * A-Frame / MindARに任せる
+     */
 
-        startButton.disabled = true;
+    start.style.display = "none";
 
-        startButton.textContent =
-          "カメラを起動しています…";
+    message.style.display = "block";
 
+  }
+);
 
-        try {
 
-          const arSystem =
-            scene.systems["mindar-image-system"];
 
+/*
+ * TARGET 01
+ */
 
-          /*
-           * MindARのカメラ開始
-           */
+target01.addEventListener(
+  "targetFound",
+  () => {
 
-          await arSystem.start();
-
-
-          /*
-           * カメラが起動したので
-           * スタート画面を消す
-           */
-
-          startScreen.style.display = "none";
-
-          hint.textContent =
-            "イラストにカメラを向けてください";
-
-          hint.style.display = "block";
-
-          scan.style.display = "block";
-
-
-        } catch (error) {
-
-          console.error(error);
-
-          startButton.disabled = false;
-
-          startButton.textContent =
-            "AR体験をはじめる";
-
-          alert(
-            "カメラを起動できませんでした。カメラの使用を許可してください。"
-          );
-
-        }
-
-      }
+    console.log(
+      "TARGET 01 FOUND"
     );
 
 
-    /* =========================
-       TARGET 01 発見
-    ========================== */
-
-    target01.addEventListener(
-      "targetFound",
-      () => {
-
-        console.log("TARGET 01 FOUND");
-
-        currentTarget = 1;
-
-        hint.textContent =
-          "作品が見つかりました";
-
-        scan.style.display = "none";
+    message.style.display =
+      "none";
 
 
-        /*
-         * ②を停止
-         */
-
-        video02.pause();
-
-        plane02.setAttribute(
-          "visible",
-          false
-        );
-
-
-        /*
-         * ①を再生
-         */
-
-        video01.currentTime = 0;
-
-        showVideo(plane01);
-
-        video01.play().catch(
-          error => console.log(error)
-        );
-
-      }
+    plane02.setAttribute(
+      "visible",
+      false
     );
 
 
-    /* =========================
-       TARGET 01 LOST
-    ========================== */
+    video02.pause();
 
-    target01.addEventListener(
-      "targetLost",
-      () => {
 
-        console.log("TARGET 01 LOST");
-
-        if (currentTarget === 1) {
-
-          currentTarget = null;
-
-          hideVideo(plane01);
-
-          video01.pause();
-
-          hint.textContent =
-            "イラストにカメラを向けてください";
-
-          scan.style.display = "block";
-
-        }
-
-      }
+    plane01.setAttribute(
+      "visible",
+      true
     );
 
 
-    /* =========================
-       TARGET 02 発見
-    ========================== */
-
-    target02.addEventListener(
-      "targetFound",
-      () => {
-
-        console.log("TARGET 02 FOUND");
-
-        currentTarget = 2;
-
-        hint.textContent =
-          "作品が見つかりました";
-
-        scan.style.display = "none";
+    video01.currentTime = 0;
 
 
-        /*
-         * ①を停止
-         */
+    video01.play().catch(
+      error =>
+        console.log(
+          "video01:",
+          error
+        )
+    );
 
-        video01.pause();
-
-        plane01.setAttribute(
-          "visible",
-          false
-        );
+  }
+);
 
 
-        /*
-         * ②を再生
-         */
 
-        video02.currentTime = 0;
+/*
+ * TARGET 01 LOST
+ */
 
-        showVideo(plane02);
+target01.addEventListener(
+  "targetLost",
+  () => {
 
-        video02.play().catch(
-          error => console.log(error)
-        );
-
-      }
+    console.log(
+      "TARGET 01 LOST"
     );
 
 
-    /* =========================
-       TARGET 02 LOST
-    ========================== */
-
-    target02.addEventListener(
-      "targetLost",
-      () => {
-
-        console.log("TARGET 02 LOST");
-
-        if (currentTarget === 2) {
-
-          currentTarget = null;
-
-          hideVideo(plane02);
-
-          video02.pause();
-
-          hint.textContent =
-            "イラストにカメラを向けてください";
-
-          scan.style.display = "block";
-
-        }
-
-      }
+    plane01.setAttribute(
+      "visible",
+      false
     );
 
-  </script>
+
+    video01.pause();
+
+
+    message.style.display =
+      "block";
+
+  }
+);
+
+
+
+/*
+ * TARGET 02
+ */
+
+target02.addEventListener(
+  "targetFound",
+  () => {
+
+    console.log(
+      "TARGET 02 FOUND"
+    );
+
+
+    message.style.display =
+      "none";
+
+
+    plane01.setAttribute(
+      "visible",
+      false
+    );
+
+
+    video01.pause();
+
+
+    plane02.setAttribute(
+      "visible",
+      true
+    );
+
+
+    video02.currentTime = 0;
+
+
+    video02.play().catch(
+      error =>
+        console.log(
+          "video02:",
+          error
+        )
+    );
+
+  }
+);
+
+
+
+/*
+ * TARGET 02 LOST
+ */
+
+target02.addEventListener(
+  "targetLost",
+  () => {
+
+    console.log(
+      "TARGET 02 LOST"
+    );
+
+
+    plane02.setAttribute(
+      "visible",
+      false
+    );
+
+
+    video02.pause();
+
+
+    message.style.display =
+      "block";
+
+  }
+);
+
+
+</script>
+
 
 </body>
 </html>
