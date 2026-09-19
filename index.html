@@ -15,6 +15,50 @@
     <!-- MindAR -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
+    <!-- ★ 外部ライブラリを使わない「安全なダスト（微粒子）」自作プログラム -->
+    <script>
+      AFRAME.registerComponent("safe-dust", {
+        schema: {
+          count: { type: "int", default: 30 },
+          color: { type: "color", default: "#FFDD88" },
+        },
+        init: function () {
+          for (let i = 0; i < this.data.count; i++) {
+            const particle = document.createElement("a-circle");
+
+            // ランダムな位置（動画の周辺に散らす）
+            const x = (Math.random() - 0.5) * 1.5;
+            const y = (Math.random() - 0.5) * 1.5;
+            const z = Math.random() * 0.3 + 0.05;
+            const radius = Math.random() * 0.012 + 0.003;
+
+            particle.setAttribute("position", `${x} ${y} ${z}`);
+            particle.setAttribute("radius", radius);
+            particle.setAttribute("color", this.data.color);
+            particle.setAttribute(
+              "material",
+              "transparent: true; opacity: 0; shader: flat",
+            );
+
+            // ゆっくりと漂い、明滅するアニメーション
+            const dur = 3000 + Math.random() * 4000;
+            const targetY = y + (Math.random() * 0.3 + 0.1);
+
+            particle.setAttribute(
+              "animation__move",
+              `property: position; to: ${x} ${targetY} ${z}; dur: ${dur}; loop: true; dir: alternate; easing: easeInOutSine`,
+            );
+            particle.setAttribute(
+              "animation__fade",
+              `property: material.opacity; from: 0; to: ${Math.random() * 0.6 + 0.2}; dur: ${dur / 2}; loop: true; dir: alternate; easing: easeInOutSine`,
+            );
+
+            this.el.appendChild(particle);
+          }
+        },
+      });
+    </script>
+
     <style>
       html,
       body {
@@ -175,7 +219,7 @@
     <!-- START SCREEN -->
     <div id="start">
       <p>カメラを使って作品を体験します</p>
-      <button id="startButton">AR体験をはじめる</button>
+      <button id="startButton">カメラを起動する</button>
     </div>
 
     <!-- UI ELEMENTS -->
@@ -240,6 +284,9 @@
 
       <!-- TARGET 01 -->
       <a-entity id="target01" mindar-image-target="targetIndex: 0">
+        <!-- ★ 安全なダスト（光の粒）エフェクト -->
+        <a-entity safe-dust="count: 35; color: #FFF0C0;"></a-entity>
+
         <a-video
           id="videoPlane01"
           src="#artist01"
@@ -253,6 +300,9 @@
 
       <!-- TARGET 02 -->
       <a-entity id="target02" mindar-image-target="targetIndex: 1">
+        <!-- ★ 安全なダスト（光の粒）エフェクト -->
+        <a-entity safe-dust="count: 35; color: #FFF0C0;"></a-entity>
+
         <a-video
           id="videoPlane02"
           src="#artist02"
@@ -320,18 +370,13 @@
       const timeline = document.getElementById("timeline");
 
       let currentKey = null;
-
       let messageTimer = null;
-
       let isSeeking = false;
-
-      /* ===== fadeIn / fadeOut ===== */
 
       const fadeTimers = new Map();
 
       function clearFadeTimer(plane) {
         const t = fadeTimers.get(plane);
-
         if (t) {
           clearTimeout(t);
           fadeTimers.delete(plane);
@@ -340,11 +385,8 @@
 
       function fadeInPlane(plane) {
         clearFadeTimer(plane);
-
         plane.removeAttribute("animation__fadeout");
-
         plane.setAttribute("visible", true);
-
         plane.setAttribute("animation__fadein", {
           property: "material.opacity",
           from: 0,
@@ -356,9 +398,7 @@
 
       function fadeOutPlane(plane) {
         clearFadeTimer(plane);
-
         plane.removeAttribute("animation__fadein");
-
         plane.setAttribute("animation__fadeout", {
           property: "material.opacity",
           from: 1,
@@ -366,25 +406,19 @@
           dur: FADE_DUR,
           easing: "easeInOutQuad",
         });
-
         const timerId = setTimeout(() => {
           plane.setAttribute("visible", false);
           fadeTimers.delete(plane);
         }, FADE_DUR);
-
         fadeTimers.set(plane, timerId);
       }
-
-      /* ===== play / pause競合対策 ===== */
 
       const playPromises = new Map();
 
       function safePlay(video) {
         const p = video.play();
-
         if (p !== undefined) {
           playPromises.set(video, p);
-
           p.catch((e) => {
             console.log("play error:", e);
           }).finally(() => {
@@ -395,19 +429,13 @@
 
       async function safePause(video) {
         const pending = playPromises.get(video);
-
         if (pending) {
           try {
             await pending;
-          } catch (e) {
-            /* noop */
-          }
+          } catch (e) {}
         }
-
         video.pause();
       }
-
-      /* ===== AR開始 ===== */
 
       startButton.addEventListener("click", async () => {
         startButton.disabled = true;
@@ -415,33 +443,25 @@
 
         try {
           const arSystem = scene.systems["mindar-image-system"];
-
           if (!arSystem) {
             throw new Error("MindAR systemが見つかりません");
           }
 
           await arSystem.start();
-
           video01.load();
           video02.load();
 
           start.style.display = "none";
-          message.textContent = "イラストにカメラを向けると、物語が始まります";
           message.style.display = "block";
         } catch (error) {
           console.error("AR START ERROR:", error);
-
           startButton.disabled = false;
-          startButton.textContent = "カメラを起動";
-
+          startButton.textContent = "カメラを起動する";
           alert(
-            "カメラを起動できませんでした。\n" +
-              "ブラウザのカメラ使用許可を確認してください。",
+            "システムエラーが発生しました。\nページを再読み込みしてもう一度お試しください。",
           );
         }
       });
-
-      /* ===== メッセージ ===== */
 
       let typewriterTimer = null; // ★追加:1文字ずつ表示するタイマー
 
@@ -473,33 +493,26 @@
 
       function hideThanks() {
         clearTimeout(messageTimer);
+        clearInterval(typewriterTimer); // ★追加
         thanks.classList.remove("show");
       }
 
-      /* ===== 字幕 ===== */
-
       function bindCaptions(video, key) {
         video.addEventListener("timeupdate", () => {
-          if (currentKey !== key) {
-            return;
-          }
+          if (currentKey !== key) return;
 
           const conf = CONFIG[key];
           const t = video.currentTime;
-
           const hit = conf.captions.find((c) => t >= c.start && t < c.end);
 
           if (hit && hit.text) {
             if (caption.textContent !== hit.text) {
               caption.textContent = hit.text;
             }
-
             caption.classList.add("show");
           } else {
             caption.classList.remove("show");
           }
-
-          /* タイムライン更新 */
 
           if (!isSeeking && video.duration) {
             timeline.value = (video.currentTime / video.duration) * 100;
@@ -510,32 +523,21 @@
       bindCaptions(video01, "artist01");
       bindCaptions(video02, "artist02");
 
-      /* ===== 動画の長さ取得 ===== */
-
       function bindMetadata(video) {
         video.addEventListener("loadedmetadata", () => {
-          if (currentKey === "artist01" && video === video01) {
+          if (currentKey === "artist01" && video === video01)
             timeline.value = 0;
-          }
-
-          if (currentKey === "artist02" && video === video02) {
+          if (currentKey === "artist02" && video === video02)
             timeline.value = 0;
-          }
         });
       }
 
       bindMetadata(video01);
       bindMetadata(video02);
 
-      /* ===== 再生 / 一時停止 ===== */
-
       playPause.addEventListener("click", () => {
-        if (!currentKey) {
-          return;
-        }
-
+        if (!currentKey) return;
         const video = currentKey === "artist01" ? video01 : video02;
-
         if (video.paused) {
           safePlay(video);
           playPause.textContent = "Ⅱ";
@@ -545,25 +547,15 @@
         }
       });
 
-      /* ===== タイムライン ===== */
-
       timeline.addEventListener("pointerdown", () => {
         isSeeking = true;
       });
 
       timeline.addEventListener("input", () => {
-        if (!currentKey) {
-          return;
-        }
-
+        if (!currentKey) return;
         const video = currentKey === "artist01" ? video01 : video02;
-
-        if (!video.duration) {
-          return;
-        }
-
+        if (!video.duration) return;
         const ratio = Number(timeline.value) / 100;
-
         video.currentTime = video.duration * ratio;
       });
 
@@ -575,119 +567,69 @@
         isSeeking = false;
       });
 
-      /* ===== TARGET 01 ===== */
-
       target01.addEventListener("targetFound", () => {
         console.log("TARGET 01 FOUND");
-
         currentKey = "artist01";
-
         message.style.display = "none";
-
         safePause(video02);
         fadeOutPlane(plane02);
-
         video01.currentTime = 0;
-
         timeline.value = 0;
-
         playPause.textContent = "Ⅱ";
-
         fadeInPlane(plane01);
-
         safePlay(video01);
-
         controls.style.display = "flex";
-
         showThanksTypewriter("artist01");
       });
 
       target01.addEventListener("targetLost", () => {
         console.log("TARGET 01 LOST");
-
         fadeOutPlane(plane01);
-
         safePause(video01);
-
         caption.classList.remove("show");
-
         hideThanks();
-
         controls.style.display = "none";
-
         playPause.textContent = "▶";
-
         if (currentKey === "artist01") {
           message.style.display = "block";
           message.textContent = "イラストにカメラを向けてください";
         }
       });
 
-      /* ===== TARGET 02 ===== */
-
       target02.addEventListener("targetFound", () => {
         console.log("TARGET 02 FOUND");
-
         currentKey = "artist02";
-
         message.style.display = "none";
-
         safePause(video01);
         fadeOutPlane(plane01);
-
         video02.currentTime = 0;
-
         timeline.value = 0;
-
         playPause.textContent = "Ⅱ";
-
         fadeInPlane(plane02);
-
         safePlay(video02);
-
         controls.style.display = "flex";
-
         showThanksTypewriter("artist02");
       });
 
       target02.addEventListener("targetLost", () => {
         console.log("TARGET 02 LOST");
-
         fadeOutPlane(plane02);
-
         safePause(video02);
-
         caption.classList.remove("show");
-
         hideThanks();
-
         controls.style.display = "none";
-
         playPause.textContent = "▶";
-
         if (currentKey === "artist02") {
           message.style.display = "block";
           message.textContent = "イラストにカメラを向けてください";
         }
       });
 
-      /* ===== 動画終了 ===== */
-
       function bindEnded(video, key) {
         video.addEventListener("ended", () => {
-          if (currentKey !== key) {
-            return;
-          }
-
-          /*
-           * 最後まで見なくてもいい。
-           * 終了してもメッセージとコントローラは残す。
-           */
-
+          if (currentKey !== key) return;
           playPause.textContent = "▶";
-
           caption.classList.remove("show");
-
           timeline.value = 100;
         });
       }
@@ -695,45 +637,29 @@
       bindEnded(video01, "artist01");
       bindEnded(video02, "artist02");
 
-      /* ===== 画面復帰時のリセット ===== */
-
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
           console.log("PAGE RESUMED — resetting AR video state");
-
           safePause(video01);
           safePause(video02);
-
           clearFadeTimer(plane01);
           clearFadeTimer(plane02);
-
           plane01.removeAttribute("animation__fadein");
           plane01.removeAttribute("animation__fadeout");
-
           plane02.removeAttribute("animation__fadein");
           plane02.removeAttribute("animation__fadeout");
-
           plane01.setAttribute("visible", false);
           plane02.setAttribute("visible", false);
-
           plane01.setAttribute("material", "opacity", 0);
           plane02.setAttribute("material", "opacity", 0);
-
           video01.load();
           video02.load();
-
           caption.classList.remove("show");
-
           hideThanks();
-
           controls.style.display = "none";
-
           playPause.textContent = "▶";
-
           timeline.value = 0;
-
           currentKey = null;
-
           message.style.display = "block";
           message.textContent = "イラストにカメラを向けてください";
         }
