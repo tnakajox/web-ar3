@@ -79,7 +79,7 @@
       #caption {
         position: fixed;
         left: 50%;
-        bottom: 90px;
+        bottom: 145px;
         transform: translateX(-50%);
         z-index: 600;
         max-width: 86%;
@@ -100,79 +100,73 @@
         opacity: 1;
       }
 
-      /* UNMUTE */
-      #unmute {
+      /* MESSAGE */
+      #thanks {
         position: fixed;
-        right: 18px;
-        bottom: 18px;
-        z-index: 600;
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
-        border: none;
-        background: rgba(255, 255, 255, 0.9);
-        font-size: 22px;
-        display: none;
-      }
-
-      /* PAUSE BEAT */
-      #pause-beat {
-        position: fixed;
-        inset: 0;
-        z-index: 700;
-        background: #000;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 1.2s ease;
-      }
-
-      #pause-beat.show {
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      /* CTA */
-      #cta {
-        position: fixed;
-        inset: 0;
-        z-index: 800;
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background: rgba(0, 0, 0, 0.92);
+        left: 50%;
+        bottom: 95px;
+        transform: translateX(-50%);
+        z-index: 650;
         color: white;
-        text-align: center;
-        padding: 0 24px;
-      }
-
-      #cta.show {
-        display: flex;
-      }
-
-      #cta p {
         font-size: 17px;
-        line-height: 1.8;
-        margin-bottom: 28px;
+        line-height: 1.6;
+        text-align: center;
+        white-space: nowrap;
+        opacity: 0;
+        display: none;
+        transition: opacity 0.8s ease;
+        text-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.9),
+          0 0 8px rgba(0, 0, 0, 0.7);
       }
 
-      #cta a {
-        display: inline-block;
-        padding: 14px 28px;
-        background: white;
-        color: black;
-        border-radius: 10px;
-        text-decoration: none;
-        font-size: 15px;
-        margin-bottom: 14px;
+      #thanks.show {
+        display: block;
+        opacity: 1;
       }
 
-      #cta button {
-        background: none;
+      /* VIDEO CONTROLLER */
+      #controls {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        z-index: 700;
+        width: 88%;
+        max-width: 500px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        box-sizing: border-box;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 12px;
+      }
+
+      #playPause {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
         border: none;
-        color: #aaa;
-        font-size: 13px;
-        text-decoration: underline;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        color: black;
+        font-size: 17px;
+        cursor: pointer;
+      }
+
+      #timeline {
+        flex: 1;
+        min-width: 0;
+        height: 4px;
+        accent-color: white;
+        cursor: pointer;
+      }
+
+      /* MINDAR SCENE */
+      a-scene {
+        position: fixed;
+        inset: 0;
       }
     </style>
   </head>
@@ -186,15 +180,22 @@
 
     <!-- UI ELEMENTS -->
     <div id="message">イラストにカメラを向けてください</div>
-    <div id="caption"></div>
-    <button id="unmute">🔊</button>
-    <div id="pause-beat"></div>
 
-    <!-- CTA SCREEN -->
-    <div id="cta">
-      <p id="cta-text"></p>
-      <a id="cta-link" href="#" target="_blank">グッズを見る</a>
-      <button id="cta-close">閉じてもう一度体験する</button>
+    <div id="caption"></div>
+
+    <div id="thanks">誰かに、届きますように</div>
+
+    <!-- VIDEO CONTROLLER -->
+    <div id="controls">
+      <button id="playPause" type="button">Ⅱ</button>
+      <input
+        id="timeline"
+        type="range"
+        min="0"
+        max="100"
+        value="0"
+        step="0.1"
+      />
     </div>
 
     <!-- MINDAR SCENE -->
@@ -267,7 +268,6 @@
     <script>
       const CONFIG = {
         artist01: {
-          unmuteAt: 4,
           captions: [
             { start: 0, end: 4, text: "" },
             {
@@ -281,57 +281,57 @@
               text: "好きな色から、順番に塗っていくの。",
             },
           ],
-          ctaDelay: 2.5,
-          ctaText: "ありがとう、を、届けてください。",
-          ctaUrl: "#",
+          messageDelay: 2.5,
+          messageText: "誰かに、届きますように",
         },
+
         artist02: {
-          unmuteAt: 4,
           captions: [
             { start: 0, end: 4, text: "" },
             { start: 4, end: 10, text: "" },
           ],
-          ctaDelay: 2.5,
-          ctaText: "ありがとう、を、届けてください。",
-          ctaUrl: "#",
+          messageDelay: 2.5,
+          messageText: "誰かに、届きますように",
         },
       };
 
-      const FADE_DUR = 800; // ms
+      const FADE_DUR = 400;
 
       const scene = document.getElementById("scene");
       const start = document.getElementById("start");
       const startButton = document.getElementById("startButton");
       const message = document.getElementById("message");
+
       const target01 = document.getElementById("target01");
       const target02 = document.getElementById("target02");
+
       const video01 = document.getElementById("artist01");
       const video02 = document.getElementById("artist02");
+
       const plane01 = document.getElementById("videoPlane01");
       const plane02 = document.getElementById("videoPlane02");
+
       const caption = document.getElementById("caption");
-      const unmuteBtn = document.getElementById("unmute");
-      const pauseBeat = document.getElementById("pause-beat");
-      const cta = document.getElementById("cta");
-      const ctaText = document.getElementById("cta-text");
-      const ctaLink = document.getElementById("cta-link");
-      const ctaClose = document.getElementById("cta-close");
 
-      let lostTimer01 = null;
+      const thanks = document.getElementById("thanks");
 
-      let lostTimer02 = null;
+      const controls = document.getElementById("controls");
+      const playPause = document.getElementById("playPause");
+      const timeline = document.getElementById("timeline");
 
       let currentKey = null;
-      let unmuteShown = {
-        artist01: false,
-        artist02: false,
-      };
 
-      // ===== fadeIn/fadeOut(タイマー競合対策版) =====
-      const fadeTimers = new Map(); // plane要素 → 非表示予約タイマーID
+      let messageTimer = null;
+
+      let isSeeking = false;
+
+      /* ===== fadeIn / fadeOut ===== */
+
+      const fadeTimers = new Map();
 
       function clearFadeTimer(plane) {
         const t = fadeTimers.get(plane);
+
         if (t) {
           clearTimeout(t);
           fadeTimers.delete(plane);
@@ -345,27 +345,20 @@
 
         plane.setAttribute("visible", true);
 
-        // 必ず透明な状態から開始
-
-        plane.setAttribute("material", "opacity", 0);
-
         plane.setAttribute("animation__fadein", {
           property: "material.opacity",
-
           from: 0,
-
           to: 1,
-
           dur: FADE_DUR,
-
           easing: "easeInOutQuad",
         });
       }
 
       function fadeOutPlane(plane) {
-        clearFadeTimer(plane); // 直前の非表示タイマーが残っていれば破棄
+        clearFadeTimer(plane);
 
         plane.removeAttribute("animation__fadein");
+
         plane.setAttribute("animation__fadeout", {
           property: "material.opacity",
           from: 1,
@@ -382,14 +375,19 @@
         fadeTimers.set(plane, timerId);
       }
 
-      // ===== play/pause競合対策 =====
-      const playPromises = new Map(); // video要素 → 進行中のplay() Promise
+      /* ===== play / pause競合対策 ===== */
+
+      const playPromises = new Map();
 
       function safePlay(video) {
         const p = video.play();
+
         if (p !== undefined) {
           playPromises.set(video, p);
-          p.catch((e) => console.log("play error:", e)).finally(() => {
+
+          p.catch((e) => {
+            console.log("play error:", e);
+          }).finally(() => {
             playPromises.delete(video);
           });
         }
@@ -397,6 +395,7 @@
 
       async function safePause(video) {
         const pending = playPromises.get(video);
+
         if (pending) {
           try {
             await pending;
@@ -404,10 +403,12 @@
             /* noop */
           }
         }
+
         video.pause();
       }
 
-      // ===== AR開始(ボタン押下時に手動start) =====
+      /* ===== AR開始 ===== */
+
       startButton.addEventListener("click", async () => {
         startButton.disabled = true;
         startButton.textContent = "カメラを起動しています…";
@@ -425,12 +426,13 @@
           video02.load();
 
           start.style.display = "none";
+          message.textContent = "イラストにカメラを向けると、物語が始まります";
           message.style.display = "block";
         } catch (error) {
           console.error("AR START ERROR:", error);
 
           startButton.disabled = false;
-          startButton.textContent = "AR体験をはじめる";
+          startButton.textContent = "カメラを起動";
 
           alert(
             "カメラを起動できませんでした。\n" +
@@ -439,25 +441,68 @@
         }
       });
 
-      // ===== 字幕制御 =====
+      /* ===== メッセージ ===== */
+
+      let typewriterTimer = null; // ★追加:1文字ずつ表示するタイマー
+
+      function showThanksTypewriter(key) {
+        const conf = CONFIG[key];
+
+        clearTimeout(messageTimer);
+        clearInterval(typewriterTimer); // ★追加:前回のタイプライターが残ってたら止める
+
+        thanks.classList.remove("show");
+        thanks.textContent = "";
+
+        messageTimer = setTimeout(() => {
+          thanks.classList.add("show");
+
+          const text = conf.messageText;
+          let i = 0;
+
+          typewriterTimer = setInterval(() => {
+            thanks.textContent += text[i];
+            i++;
+
+            if (i >= text.length) {
+              clearInterval(typewriterTimer);
+            }
+          }, 80); // 1文字あたり80ms
+        }, conf.messageDelay * 1000);
+      }
+
+      function hideThanks() {
+        clearTimeout(messageTimer);
+        thanks.classList.remove("show");
+      }
+
+      /* ===== 字幕 ===== */
+
       function bindCaptions(video, key) {
         video.addEventListener("timeupdate", () => {
+          if (currentKey !== key) {
+            return;
+          }
+
           const conf = CONFIG[key];
           const t = video.currentTime;
+
           const hit = conf.captions.find((c) => t >= c.start && t < c.end);
 
           if (hit && hit.text) {
             if (caption.textContent !== hit.text) {
               caption.textContent = hit.text;
             }
+
             caption.classList.add("show");
           } else {
             caption.classList.remove("show");
           }
 
-          if (!unmuteShown[key] && t >= conf.unmuteAt) {
-            unmuteShown[key] = true;
-            unmuteBtn.style.display = "block";
+          /* タイムライン更新 */
+
+          if (!isSeeking && video.duration) {
+            timeline.value = (video.currentTime / video.duration) * 100;
           }
         });
       }
@@ -465,134 +510,193 @@
       bindCaptions(video01, "artist01");
       bindCaptions(video02, "artist02");
 
-      // ===== ミュート解除ボタン =====
-      unmuteBtn.addEventListener("click", () => {
-        if (currentKey) {
-          const v = currentKey === "artist01" ? video01 : video02;
-          v.muted = false;
-        }
-        unmuteBtn.style.display = "none";
-      });
+      /* ===== 動画の長さ取得 ===== */
 
-      // ===== 動画再生終了時 =====
-      function bindEnded(video, key) {
-        video.addEventListener("ended", () => {
-          const conf = CONFIG[key];
-          caption.classList.remove("show");
-          unmuteBtn.style.display = "none";
-          pauseBeat.classList.add("show");
+      function bindMetadata(video) {
+        video.addEventListener("loadedmetadata", () => {
+          if (currentKey === "artist01" && video === video01) {
+            timeline.value = 0;
+          }
 
-          setTimeout(() => {
-            ctaText.textContent = conf.ctaText;
-            ctaLink.href = conf.ctaUrl;
-            cta.classList.add("show");
-          }, conf.ctaDelay * 1000);
+          if (currentKey === "artist02" && video === video02) {
+            timeline.value = 0;
+          }
         });
       }
 
-      bindEnded(video01, "artist01");
-      bindEnded(video02, "artist02");
+      bindMetadata(video01);
+      bindMetadata(video02);
 
-      // ===== CTA閉じるボタン =====
-      ctaClose.addEventListener("click", () => {
-        cta.classList.remove("show");
-        pauseBeat.classList.remove("show");
+      /* ===== 再生 / 一時停止 ===== */
 
-        fadeOutPlane(plane01);
-        fadeOutPlane(plane02);
+      playPause.addEventListener("click", () => {
+        if (!currentKey) {
+          return;
+        }
 
-        message.style.display = "block";
-        message.textContent = "イラストにカメラを向けてください";
+        const video = currentKey === "artist01" ? video01 : video02;
+
+        if (video.paused) {
+          safePlay(video);
+          playPause.textContent = "Ⅱ";
+        } else {
+          safePause(video);
+          playPause.textContent = "▶";
+        }
       });
 
-      // ===== TARGET 01 =====
+      /* ===== タイムライン ===== */
+
+      timeline.addEventListener("pointerdown", () => {
+        isSeeking = true;
+      });
+
+      timeline.addEventListener("input", () => {
+        if (!currentKey) {
+          return;
+        }
+
+        const video = currentKey === "artist01" ? video01 : video02;
+
+        if (!video.duration) {
+          return;
+        }
+
+        const ratio = Number(timeline.value) / 100;
+
+        video.currentTime = video.duration * ratio;
+      });
+
+      timeline.addEventListener("pointerup", () => {
+        isSeeking = false;
+      });
+
+      timeline.addEventListener("change", () => {
+        isSeeking = false;
+      });
+
+      /* ===== TARGET 01 ===== */
+
       target01.addEventListener("targetFound", () => {
-        clearTimeout(lostTimer01);
         console.log("TARGET 01 FOUND");
+
         currentKey = "artist01";
+
         message.style.display = "none";
 
         safePause(video02);
         fadeOutPlane(plane02);
 
         video01.currentTime = 0;
+
+        timeline.value = 0;
+
+        playPause.textContent = "Ⅱ";
+
         fadeInPlane(plane01);
+
         safePlay(video01);
+
+        controls.style.display = "flex";
+
+        showThanksTypewriter("artist01");
       });
 
       target01.addEventListener("targetLost", () => {
         console.log("TARGET 01 LOST");
 
-        clearTimeout(lostTimer01);
+        fadeOutPlane(plane01);
 
-        lostTimer01 = setTimeout(() => {
-          // 1秒以内に再認識していたら何もしない
+        safePause(video01);
 
-          if (currentKey !== "artist01") {
-            return;
-          }
+        caption.classList.remove("show");
 
-          fadeOutPlane(plane01);
+        hideThanks();
 
-          safePause(video01);
+        controls.style.display = "none";
 
-          caption.classList.remove("show");
+        playPause.textContent = "▶";
 
-          unmuteBtn.style.display = "none";
-
-          currentKey = null;
-
-          if (!cta.classList.contains("show")) {
-            message.style.display = "block";
-
-            message.textContent = "イラストにカメラを向けてください";
-          }
-        }, 1000);
+        if (currentKey === "artist01") {
+          message.style.display = "block";
+          message.textContent = "イラストにカメラを向けてください";
+        }
       });
 
-      // ===== TARGET 02 =====
+      /* ===== TARGET 02 ===== */
+
       target02.addEventListener("targetFound", () => {
-        clearTimeout(lostTimer02);
         console.log("TARGET 02 FOUND");
+
         currentKey = "artist02";
+
         message.style.display = "none";
 
         safePause(video01);
         fadeOutPlane(plane01);
 
         video02.currentTime = 0;
+
+        timeline.value = 0;
+
+        playPause.textContent = "Ⅱ";
+
         fadeInPlane(plane02);
+
         safePlay(video02);
+
+        controls.style.display = "flex";
+
+        showThanksTypewriter("artist02");
       });
 
       target02.addEventListener("targetLost", () => {
         console.log("TARGET 02 LOST");
 
-        clearTimeout(lostTimer02);
+        fadeOutPlane(plane02);
 
-        lostTimer02 = setTimeout(() => {
-          if (currentKey !== "artist02") {
+        safePause(video02);
+
+        caption.classList.remove("show");
+
+        hideThanks();
+
+        controls.style.display = "none";
+
+        playPause.textContent = "▶";
+
+        if (currentKey === "artist02") {
+          message.style.display = "block";
+          message.textContent = "イラストにカメラを向けてください";
+        }
+      });
+
+      /* ===== 動画終了 ===== */
+
+      function bindEnded(video, key) {
+        video.addEventListener("ended", () => {
+          if (currentKey !== key) {
             return;
           }
 
-          fadeOutPlane(plane02);
+          /*
+           * 最後まで見なくてもいい。
+           * 終了してもメッセージとコントローラは残す。
+           */
 
-          safePause(video02);
+          playPause.textContent = "▶";
 
           caption.classList.remove("show");
 
-          unmuteBtn.style.display = "none";
+          timeline.value = 100;
+        });
+      }
 
-          currentKey = null;
+      bindEnded(video01, "artist01");
+      bindEnded(video02, "artist02");
 
-          if (!cta.classList.contains("show")) {
-            message.style.display = "block";
-            message.textContent = "イラストにカメラを向けてください";
-          }
-        }, 1000);
-      });
+      /* ===== 画面復帰時のリセット ===== */
 
-      // ===== 画面復帰時の強制リセット(WebGLコンテキスト破棄対策) =====
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
           console.log("PAGE RESUMED — resetting AR video state");
@@ -602,12 +706,16 @@
 
           clearFadeTimer(plane01);
           clearFadeTimer(plane02);
+
           plane01.removeAttribute("animation__fadein");
           plane01.removeAttribute("animation__fadeout");
+
           plane02.removeAttribute("animation__fadein");
           plane02.removeAttribute("animation__fadeout");
+
           plane01.setAttribute("visible", false);
           plane02.setAttribute("visible", false);
+
           plane01.setAttribute("material", "opacity", 0);
           plane02.setAttribute("material", "opacity", 0);
 
@@ -615,14 +723,19 @@
           video02.load();
 
           caption.classList.remove("show");
-          unmuteBtn.style.display = "none";
+
+          hideThanks();
+
+          controls.style.display = "none";
+
+          playPause.textContent = "▶";
+
+          timeline.value = 0;
 
           currentKey = null;
 
-          if (!cta.classList.contains("show")) {
-            message.style.display = "block";
-            message.textContent = "イラストにカメラを向けてください";
-          }
+          message.style.display = "block";
+          message.textContent = "イラストにカメラを向けてください";
         }
       });
     </script>
