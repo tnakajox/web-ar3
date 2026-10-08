@@ -95,6 +95,27 @@
         opacity: 0.6;
       }
 
+      /* ★ 追加: リンクボタン */
+      #yokohama-link {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.95);
+        color: #111;
+        text-decoration: none;
+        padding: 10px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: bold;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        display: none;
+        transition: transform 0.2s ease;
+      }
+      #yokohama-link:active {
+        transform: scale(0.95);
+      }
+
       #message {
         position: fixed;
         top: 30px;
@@ -204,6 +225,11 @@
       <button id="startButton">カメラを起動する</button>
     </div>
 
+    <!-- ★ 追加: グローバルリンクボタン -->
+    <a id="yokohama-link" href="https://yokohamafont.jp/" target="_blank"
+      >YOKOHAMA FONT</a
+    >
+
     <div id="message">イラストにカメラを向けてください</div>
     <div id="caption"></div>
     <div id="thanks">誰かに、届きますように</div>
@@ -245,7 +271,6 @@
           playsinline
           webkit-playsinline
         ></video>
-        <!-- ★ 追加: 03と04の動画 -->
         <video
           id="artist03"
           src="./artist03.mp4"
@@ -266,7 +291,7 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- TARGET 01 -->
+      <!-- TARGET 01 (横動画) -->
       <a-entity id="target01" mindar-image-target="targetIndex: 0">
         <a-entity
           safe-dust="count: 35; color: #FFF0C0;"
@@ -284,13 +309,14 @@
         ></a-video>
       </a-entity>
 
-      <!-- TARGET 02 -->
+      <!-- TARGET 02 (縦動画に変更) -->
       <a-entity id="target02" mindar-image-target="targetIndex: 1">
         <a-entity
           safe-dust="count: 35; color: #FFF0C0;"
           scale="1.4 1.4 1.4"
           position="0 0 0.05"
         ></a-entity>
+        <!-- ★ 横と縦のサイズ(widthとheight)を入れ替えて、縦長(9:16)に設定 -->
         <a-video
           id="videoPlane02"
           src="#artist02"
@@ -302,7 +328,7 @@
         ></a-video>
       </a-entity>
 
-      <!-- ★ 追加: TARGET 03 -->
+      <!-- TARGET 03 (横動画) -->
       <a-entity id="target03" mindar-image-target="targetIndex: 2">
         <a-entity
           safe-dust="count: 35; color: #FFF0C0;"
@@ -320,7 +346,7 @@
         ></a-video>
       </a-entity>
 
-      <!-- ★ 追加: TARGET 04 -->
+      <!-- TARGET 04 (横動画) -->
       <a-entity id="target04" mindar-image-target="targetIndex: 3">
         <a-entity
           safe-dust="count: 35; color: #FFF0C0;"
@@ -340,7 +366,6 @@
     </a-scene>
 
     <script>
-      // ★ 03と04の字幕設定を追加
       const CONFIG = {
         artist01: {
           captions: [
@@ -392,8 +417,8 @@
       const controls = document.getElementById("controls");
       const playPause = document.getElementById("playPause");
       const timeline = document.getElementById("timeline");
+      const yokohamaLink = document.getElementById("yokohama-link"); // ★ 追加
 
-      // ★ エレメントの取得を配列化して扱いやすく整理
       const arItems = [
         {
           key: "artist01",
@@ -487,7 +512,6 @@
         video.pause();
       }
 
-      // ★ 認識したマーカー「以外」の動画を確実に止める関数
       function stopOtherVideos(keepKey) {
         arItems.forEach((item) => {
           if (item.key !== keepKey) {
@@ -509,6 +533,7 @@
 
           start.style.display = "none";
           message.style.display = "block";
+          yokohamaLink.style.display = "block"; // ★ 追加: カメラ起動後にリンクボタンを表示
         } catch (error) {
           console.error("AR START ERROR:", error);
           startButton.disabled = false;
@@ -543,9 +568,7 @@
         thanks.classList.remove("show");
       }
 
-      // 全アイテムに対してイベントを登録
       arItems.forEach((item) => {
-        // 字幕とタイムライン
         item.video.addEventListener("timeupdate", () => {
           if (currentKey !== item.key) return;
           const conf = CONFIG[item.key];
@@ -565,18 +588,16 @@
           }
         });
 
-        // メタデータ読み込み時
         item.video.addEventListener("loadedmetadata", () => {
           if (currentKey === item.key) timeline.value = 0;
         });
 
-        // ターゲット発見時
         item.target.addEventListener("targetFound", () => {
           console.log(`TARGET ${item.key} FOUND`);
           currentKey = item.key;
           message.style.display = "none";
 
-          stopOtherVideos(item.key); // 他を全部止める
+          stopOtherVideos(item.key);
 
           item.video.currentTime = 0;
           timeline.value = 0;
@@ -589,7 +610,6 @@
           showThanksTypewriter(item.key);
         });
 
-        // ターゲット消失時
         item.target.addEventListener("targetLost", () => {
           console.log(`TARGET ${item.key} LOST`);
           fadeOutPlane(item.plane);
@@ -605,7 +625,6 @@
           }
         });
 
-        // 動画終了時
         item.video.addEventListener("ended", () => {
           if (currentKey !== item.key) return;
           playPause.textContent = "▶";
@@ -614,7 +633,6 @@
         });
       });
 
-      // コントローラー
       playPause.addEventListener("click", () => {
         if (!currentKey) return;
         const currentItem = arItems.find((i) => i.key === currentKey);
@@ -638,7 +656,6 @@
         currentItem.video.currentTime = currentItem.video.duration * ratio;
       });
 
-      // 画面オフ・別タブからの復帰リセット
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
           console.log("PAGE RESUMED — resetting AR video state");
