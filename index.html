@@ -95,27 +95,6 @@
         opacity: 0.6;
       }
 
-      /* ★ 追加: リンクボタン */
-      #yokohama-link {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        background: rgba(255, 255, 255, 0.95);
-        color: #111;
-        text-decoration: none;
-        padding: 10px 16px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: bold;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        display: none;
-        transition: transform 0.2s ease;
-      }
-      #yokohama-link:active {
-        transform: scale(0.95);
-      }
-
       #message {
         position: fixed;
         top: 30px;
@@ -225,14 +204,9 @@
       <button id="startButton">カメラを起動する</button>
     </div>
 
-    <!-- ★ 追加: グローバルリンクボタン -->
-    <a id="yokohama-link" href="https://yokohamafont.jp/" target="_blank"
-      >YOKOHAMA FONT</a
-    >
-
     <div id="message">イラストにカメラを向けてください</div>
     <div id="caption"></div>
-    <div id="thanks">みんなの、笑顔のために</div>
+    <div id="thanks">誰かに、届きますように</div>
 
     <div id="controls">
       <button id="playPause" type="button">Ⅱ</button>
@@ -271,27 +245,11 @@
           playsinline
           webkit-playsinline
         ></video>
-        <video
-          id="artist03"
-          src="./artist03.mp4"
-          preload="auto"
-          muted
-          playsinline
-          webkit-playsinline
-        ></video>
-        <video
-          id="artist04"
-          src="./artist04.mp4"
-          preload="auto"
-          muted
-          playsinline
-          webkit-playsinline
-        ></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- TARGET 01 (横動画) -->
+      <!-- TARGET 01 -->
       <a-entity id="target01" mindar-image-target="targetIndex: 0">
         <a-entity
           safe-dust="count: 35; color: #FFF0C0;"
@@ -309,56 +267,19 @@
         ></a-video>
       </a-entity>
 
-      <!-- TARGET 02 (縦動画に変更) -->
+      <!-- TARGET 02 -->
       <a-entity id="target02" mindar-image-target="targetIndex: 1">
         <a-entity
           safe-dust="count: 35; color: #FFF0C0;"
           scale="1.4 1.4 1.4"
           position="0 0 0.05"
         ></a-entity>
-        <!-- ★ 横と縦のサイズ(widthとheight)を入れ替えて、縦長(9:16)に設定 -->
         <a-video
           id="videoPlane02"
           src="#artist02"
           position="0 0 0.1"
-          width="0.7875"
-          height="1.4"
-          visible="false"
-          material="transparent: true; opacity: 0"
-        ></a-video>
-      </a-entity>
-
-      <!-- TARGET 03 (横動画) -->
-      <a-entity id="target03" mindar-image-target="targetIndex: 2">
-        <a-entity
-          safe-dust="count: 35; color: #FFF0C0;"
-          scale="1.4 1.4 1.4"
-          position="0 0 0.05"
-        ></a-entity>
-        <a-video
-          id="videoPlane03"
-          src="#artist03"
-          position="0 0 0.1"
-          width="0.7875"
-          height=""
-          visible="false"
-          material="transparent: true; opacity: 0"
-        ></a-video>
-      </a-entity>
-
-      <!-- TARGET 04 (横動画) -->
-      <a-entity id="target04" mindar-image-target="targetIndex: 3">
-        <a-entity
-          safe-dust="count: 35; color: #FFF0C0;"
-          scale="1.4 1.4 1.4"
-          position="0 0 0.05"
-        ></a-entity>
-        <a-video
-          id="videoPlane04"
-          src="#artist04"
-          position="0 0 0.1"
-          width="0.7875"
-          height=""
+          width="1.4"
+          height="0.7875"
           visible="false"
           material="transparent: true; opacity: 0"
         ></a-video>
@@ -370,10 +291,15 @@
         artist01: {
           captions: [
             { start: 0, end: 4, text: "" },
-            { start: 4, end: 10, text: "" },
+            {
+              start: 4,
+              end: 9,
+              text: "これ描いてるとき、なんも考えてない。落ち着くから。",
+            },
+            { start: 9, end: 14, text: "好きな色から、順番に塗っていくの。" },
           ],
           messageDelay: 2.5,
-          messageText: "みんなの、笑顔のために",
+          messageText: "誰かに、届きますように",
         },
         artist02: {
           captions: [
@@ -381,23 +307,7 @@
             { start: 4, end: 10, text: "" },
           ],
           messageDelay: 2.5,
-          messageText: "みんなの、笑顔のために",
-        },
-        artist03: {
-          captions: [
-            { start: 0, end: 4, text: "" },
-            { start: 4, end: 10, text: "" },
-          ],
-          messageDelay: 2.5,
-          messageText: "みんなの、笑顔のために",
-        },
-        artist04: {
-          captions: [
-            { start: 0, end: 4, text: "" },
-            { start: 4, end: 10, text: "" },
-          ],
-          messageDelay: 2.5,
-          messageText: "みんなの、笑顔のために",
+          messageText: "誰かに、届きますように",
         },
       };
 
@@ -412,7 +322,6 @@
       const controls = document.getElementById("controls");
       const playPause = document.getElementById("playPause");
       const timeline = document.getElementById("timeline");
-      const yokohamaLink = document.getElementById("yokohama-link"); // ★ 追加
 
       const arItems = [
         {
@@ -426,18 +335,6 @@
           target: document.getElementById("target02"),
           video: document.getElementById("artist02"),
           plane: document.getElementById("videoPlane02"),
-        },
-        {
-          key: "artist03",
-          target: document.getElementById("target03"),
-          video: document.getElementById("artist03"),
-          plane: document.getElementById("videoPlane03"),
-        },
-        {
-          key: "artist04",
-          target: document.getElementById("target04"),
-          video: document.getElementById("artist04"),
-          plane: document.getElementById("videoPlane04"),
         },
       ];
 
@@ -528,7 +425,6 @@
 
           start.style.display = "none";
           message.style.display = "block";
-          yokohamaLink.style.display = "block"; // ★ 追加: カメラ起動後にリンクボタンを表示
         } catch (error) {
           console.error("AR START ERROR:", error);
           startButton.disabled = false;
